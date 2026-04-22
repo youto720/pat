@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Nunito', sans-serif;
+  background-color: #ffffff;
+  overflow: hidden;
+  height: 100dvh;
+  width: 100dvw;
+}
+
+#root {
+  height: 100dvh;
+  width: 100dvw;
+  display: flex;
+  flex-direction: column;
+}
+
+.cell {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: clamp(10px, 2.5vw, 14px);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+@keyframes goalPulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: 0.9; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes goalTextPop {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  60% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+  80% { transform: translate(-50%, -50%) scale(0.95); }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+@keyframes scoreFloat {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-60px); opacity: 0; }
+}
+
+@keyframes particleFly {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+}
+
+@keyframes gridFlash {
+  0% { opacity: 1; }
+  30% { opacity: 0.6; background-color: rgba(78, 205, 125, 0.15); }
+  100% { opacity: 1; }
+}
+
+@keyframes resetFade {
+  0% { opacity: 0.6; }
+  100% { opacity: 1; }
+}

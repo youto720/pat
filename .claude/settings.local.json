@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(powershell.exe \"node --version; npm --version\")",
+      "Bash(cmd.exe /c \"node --version && npm --version\")",
+      "Bash(cmd.exe /c \"where node\")",
+      "Bash(cmd.exe /c \"dir C:\\\\\\\\Program Files\\\\\\\\nodejs\")",
+      "Bash(export PATH=\"/c/Program Files/nodejs:$PATH\")",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "WebFetch(domain:note.com)"
+    ]
+  }
+}
