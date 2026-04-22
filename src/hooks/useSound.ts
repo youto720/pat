@@ -2,35 +2,6 @@ declare global {
   interface Window { webkitAudioContext?: typeof AudioContext; }
 }
 
-// ─── WAV generator ───────────────────────────────────────────────────
-function generateWavDataUri(
-  durationSec: number,
-  sampleFn: (t: number, i: number, n: number) => number,
-): string {
-  const sr = 44100;
-  const n = Math.floor(sr * durationSec);
-  const buf = new ArrayBuffer(44 + n * 2);
-  const v = new DataView(buf);
-  const writeStr = (o: number, s: string) => {
-    for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i));
-  };
-  writeStr(0, 'RIFF');  v.setUint32(4, 36 + n * 2, true);
-  writeStr(8, 'WAVE');  writeStr(12, 'fmt ');
-  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
-  v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true);
-  v.setUint16(32, 2, true);  v.setUint16(34, 16, true);
-  writeStr(36, 'data'); v.setUint32(40, n * 2, true);
-  for (let i = 0; i < n; i++) {
-    const t = i / sr;
-    const s = Math.max(-1, Math.min(1, sampleFn(t, i, n)));
-    v.setInt16(44 + i * 2, s * 32767, true);
-  }
-  const bytes = new Uint8Array(buf);
-  let bin = '';
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-  return `data:audio/wav;base64,${btoa(bin)}`;
-}
-
 // ─── State & logging ──────────────────────────────────────────────────
 let ctx: AudioContext | null = null;
 let webAudioOk = false;
