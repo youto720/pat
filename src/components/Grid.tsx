@@ -12,15 +12,20 @@ interface Props {
 }
 
 function getCellBg(cell: Cell): string {
-  if (cell.type === 'start') return '#F4845F';
-  if (cell.type === 'goal') return '#E87070';
-  if (cell.visited) return '#4CAF7D';
+  // if (cell.type === 'start') return '#F4845F';
+  // if (cell.type === 'goal') return '#E87070';
+  // if (cell.visited) return '#4CAF7D';
+  if (cell.type === 'start') return '#66ccff';
+  if (cell.type === 'goal') return '#cacacc';
+  if (cell.visited) return '#66ccff';
   return '#F5F5F5';
 }
 
 function getCellLabel(cell: Cell): string {
-  if (cell.type === 'start') return 'S';
-  if (cell.type === 'goal') return 'G';
+  // if (cell.type === 'start') return 'S';
+  // if (cell.type === 'goal') return 'G';
+  if (cell.type === 'start') return '';
+  if (cell.type === 'goal') return '';
   return '';
 }
 
@@ -191,11 +196,14 @@ export function Grid({ game, sound }: Props) {
                 backgroundColor: getCellBg(cell),
                 border: `1.5px solid ${cell.visited || cell.type !== 'normal' ? 'transparent' : '#E0E0E0'}`,
                 boxShadow: cell.visited && cell.type === 'normal'
-                  ? '0 1px 4px rgba(76,175,125,0.3)'
+                  // ? '0 1px 4px rgba(76,175,125,0.3)'
+                  ? '0 1px 4px rgba(102, 204, 255,0.3)'
                   : cell.type === 'start'
-                  ? '0 1px 4px rgba(244,132,95,0.4)'
+                  // ? '0 1px 4px rgba(244,132,95,0.4)'
+                  ? '0 1px 4px rgba(102, 204, 255,0.4)'
                   : cell.type === 'goal'
-                  ? '0 1px 4px rgba(232,112,112,0.4)'
+                  // ? '0 1px 4px rgba(232,112,112,0.4)'
+                  ? '0 1px 4px rgba(202,202,204,0.4)'
                   : 'none',
                 transform: cell.visited && cell.type === 'normal' ? 'scale(0.96)' : 'scale(1)',
                 transition: 'background-color 0.08s ease, transform 0.08s ease',
