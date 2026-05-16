@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import type { GameState, GridConfig } from '../types/game';
 import { generateGrid } from '../utils/gridGenerator';
 
-const INITIAL_CONFIG: GridConfig = { cols: 5, rows: 7 };
+const INITIAL_CONFIG: GridConfig = { cols: 6, rows: 7 };
 const MAX_COLS = 8;
 const MAX_ROWS = 12;
 
@@ -67,7 +67,8 @@ export function useGameLogic() {
       cells[row][col] = { ...cells[row][col], visited: true };
       const path: Array<[number, number]> = [...prev.path, [row, col]];
 
-      if (prev.cells[row][col].type === 'goal') {
+      const totalCells = prev.config.rows * prev.config.cols;
+      if (path.length === totalCells) {
         const score = path.length * 10;
         const newGoalCount = prev.goalCount + 1;
         const newConfig = computeConfig(newGoalCount);

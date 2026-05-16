@@ -11,14 +11,27 @@ interface Props {
   sound: SoundAPI;
 }
 
-function getCellBg(cell: Cell): string {
+// セルのカラー（初期版）
+// function getCellBg(cell: Cell): string {
   // if (cell.type === 'start') return '#F4845F';
   // if (cell.type === 'goal') return '#E87070';
   // if (cell.visited) return '#4CAF7D';
-  if (cell.type === 'start') return '#66ccff';
+// }
+
+// セルのカラー（テスト１）
+// function getCellBg(cell: Cell): string {
+//   if (cell.type === 'start') return '#66ccff';
+//   if (cell.type === 'goal') return '#cacacc';
+//   if (cell.visited) return '#66ccff';
+//   return '#F5F5F5';
+// }
+
+// セルのカラー（テスト２）
+function getCellBg(cell: Cell): string {
+  if (cell.type === 'start') return '#cacacc';
   if (cell.type === 'goal') return '#cacacc';
-  if (cell.visited) return '#66ccff';
-  return '#F5F5F5';
+  if (cell.visited) return '#cacacc';
+  return '#66ccff';
 }
 
 function getCellLabel(cell: Cell): string {
@@ -69,10 +82,10 @@ export function Grid({ game, sound }: Props) {
     const dc = Math.abs(col - lastCol);
     if (!((dr === 1 && dc === 0) || (dr === 0 && dc === 1))) return;
 
-    const isGoalCell = cell.type === 'goal';
+    const willBeGoal = game.path.length + 1 === game.config.rows * game.config.cols;
     game.extendTrace(row, col);
 
-    if (isGoalCell) {
+    if (willBeGoal) {
       sound.playGoal();
     } else {
       sound.playStep(game.path.length);
