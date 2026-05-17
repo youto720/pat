@@ -2,22 +2,15 @@ import { useState, useCallback } from 'react';
 import type { GameState, GridConfig } from '../types/game';
 import { generateGrid } from '../utils/gridGenerator';
 
-const INITIAL_CONFIG: GridConfig = { cols: 6, rows: 7 };
+const INITIAL_CONFIG: GridConfig = { cols: 4, rows: 4 };
 const MAX_COLS = 8;
-const MAX_ROWS = 12;
+const MAX_ROWS = 8;
 
 function computeConfig(goalCount: number): GridConfig {
-  const colBonus = Math.min(
-    Math.floor(goalCount / 3),
-    MAX_COLS - INITIAL_CONFIG.cols
-  );
-  const rowBonus = Math.min(
-    Math.floor(goalCount / 5),
-    MAX_ROWS - INITIAL_CONFIG.rows
-  );
+  const bonus = Math.floor(goalCount / 2);
   return {
-    cols: INITIAL_CONFIG.cols + colBonus,
-    rows: INITIAL_CONFIG.rows + rowBonus,
+    cols: Math.min(INITIAL_CONFIG.cols + bonus, MAX_COLS),
+    rows: Math.min(INITIAL_CONFIG.rows + bonus, MAX_ROWS),
   };
 }
 
