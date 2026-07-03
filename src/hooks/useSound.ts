@@ -93,7 +93,8 @@ function playWeb(fn: (ac: AudioContext) => void) {
 export function useSound() {
   function playStep(step: number) {
     playWeb(ac => {
-      const freq = 440 * Math.pow(1.04, Math.min(step, 24));
+      // 低めの音から始めて、8x8=64 マスでも頭打ちしないよう高音域まで伸ばす
+      const freq = Math.min(260 * Math.pow(1.05, step), 3000);
       const osc = ac.createOscillator();
       const gain = ac.createGain();
       osc.connect(gain); gain.connect(ac.destination);
@@ -135,5 +136,37 @@ export function useSound() {
     });
   }
 
-  return { playStep, playGoal, playReset, unlockAudio };
+  // 加点マス：コインを取ったような2音チャイム
+  function playBonus() {
+    playWeb(ac => {
+      [1318.5, 1975.5].forEach((freq, i) => {
+        const t = ac.currentTime + i * 0.08;
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.connect(gain); gain.connect(ac.destination);
+        osc.type = 'square';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.12, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+        osc.start(t); osc.stop(t + 0.15);
+      });
+    });
+  }
+
+  // 地雷マス：低いブザー音
+  function playFail() {
+    playWeb(ac => {
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.connect(gain); gain.connect(ac.destination);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(110, ac.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(45, ac.currentTime + 0.35);
+      gain.gain.setValueAtTime(0.2, ac.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.35);
+      osc.start(ac.currentTime); osc.stop(ac.currentTime + 0.35);
+    });
+  }
+
+  return { playStep, playGoal, playReset, playBonus, playFail, unlockAudio };
 }

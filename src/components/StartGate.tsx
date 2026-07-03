@@ -27,28 +27,19 @@ export function StartGate({ onStart }: Props) {
     >
       <div
         style={{
-          fontSize: 'clamp(36px, 10vw, 56px)',
+          fontSize: 'clamp(48px, 14vw, 72px)',
           fontWeight: 900,
           color: '#333',
-          marginBottom: '8px',
-        }}
-      >
-        pat
-      </div>
-      <div
-        style={{
-          fontSize: '14px',
-          color: '#888',
+          letterSpacing: '4px',
           marginBottom: '40px',
-          fontWeight: 600,
         }}
       >
-        なぞって繋ぐ一筆書きパズル
+        POPO
       </div>
       <button
         onClick={handleStart}
         style={{
-          padding: '18px 40px',
+          padding: '18px 48px',
           fontSize: '20px',
           fontWeight: 900,
           backgroundColor: '#F4845F',
@@ -58,22 +49,20 @@ export function StartGate({ onStart }: Props) {
           cursor: 'pointer',
           boxShadow: '0 4px 12px rgba(244,132,95,0.4)',
           fontFamily: 'inherit',
+          letterSpacing: '1px',
         }}
       >
-        タップしてスタート
+        TAP TO START
       </button>
       <div
         style={{
           marginTop: '24px',
-          fontSize: '11px',
+          fontSize: '12px',
           color: '#aaa',
-          fontWeight: 600,
-          maxWidth: '280px',
-          textAlign: 'center',
-          lineHeight: 1.5,
+          fontWeight: 700,
         }}
       >
-        音を鳴らすため、一度タップしてください
+        🔊 SOUND ON
       </div>
     </div>
   );

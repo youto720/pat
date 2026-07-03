@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 interface Props {
   score: number;
-  goalCount: number;
+  willGrow: boolean;
 }
 
 interface Particle {
@@ -31,7 +31,7 @@ function makeParticles(count: number): Particle[] {
   });
 }
 
-export function GoalEffect({ score, goalCount }: Props) {
+export function GoalEffect({ score, willGrow }: Props) {
   const [particles] = useState(() => makeParticles(20));
   const [visible, setVisible] = useState(true);
 
@@ -41,8 +41,6 @@ export function GoalEffect({ score, goalCount }: Props) {
   }, []);
 
   if (!visible) return null;
-
-  const isLevelUp = goalCount % 3 === 0 || goalCount % 5 === 0;
 
   return (
     <div
@@ -107,7 +105,7 @@ export function GoalEffect({ score, goalCount }: Props) {
         >
           +{score}
         </div>
-        {isLevelUp && (
+        {willGrow && (
           <div
             style={{
               fontSize: 'clamp(13px, 3.5vw, 18px)',
@@ -116,7 +114,7 @@ export function GoalEffect({ score, goalCount }: Props) {
               marginTop: '4px',
             }}
           >
-            LEVEL UP!
+            SIZE UP!
           </div>
         )}
       </div>

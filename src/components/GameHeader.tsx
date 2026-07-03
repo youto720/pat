@@ -1,131 +1,95 @@
-import { useState } from 'react';
-
 interface Props {
   totalScore: number;
-  goalCount: number;
   roundScore: number;
+  timeLeftMs: number | null; // タイムアタック中のみ数値
+  onMenu: () => void;
 }
 
-export function GameHeader({ totalScore, goalCount, roundScore }: Props) {
-  const [menuOpen, setMenuOpen] = useState(false);
+function fmt(ms: number): string {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(s / 60);
+  return `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}
 
+export function GameHeader({ totalScore, roundScore, timeLeftMs, onMenu }: Props) {
   return (
-    <>
-      <header
+    <header
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        height: '56px',
+        padding: '0 16px',
+        backgroundColor: 'rgba(255,255,255,0.85)',
+        borderBottom: '1px solid rgba(0,0,0,0.08)',
+        flexShrink: 0,
+        fontFamily: 'Nunito, sans-serif',
+      }}
+    >
+      {/* Hamburger */}
+      <button
+        onClick={onMenu}
         style={{
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: '8px',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          height: '56px',
-          padding: '0 16px',
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #E0E0E0',
-          flexShrink: 0,
-          fontFamily: 'Nunito, sans-serif',
+          flexDirection: 'column',
+          gap: '5px',
         }}
+        aria-label="menu"
       >
-        {/* Hamburger */}
-        <button
-          onClick={() => setMenuOpen(o => !o)}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '8px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '5px',
-          }}
-          aria-label="メニュー"
-        >
-          {[0, 1, 2].map(i => (
-            <span
-              key={i}
-              style={{
-                display: 'block',
-                width: '22px',
-                height: '2px',
-                backgroundColor: '#333',
-                borderRadius: '2px',
-                transition: 'transform 0.2s',
-              }}
-            />
-          ))}
-        </button>
+        {[0, 1, 2].map(i => (
+          <span
+            key={i}
+            style={{
+              display: 'block',
+              width: '22px',
+              height: '2px',
+              backgroundColor: '#333',
+              borderRadius: '2px',
+            }}
+          />
+        ))}
+      </button>
 
-        {/* Title */}
+      {/* Title / Timer */}
+      {timeLeftMs != null ? (
+        <span
+          style={{
+            fontSize: '22px',
+            fontWeight: 900,
+            color: timeLeftMs < 10000 ? '#E87070' : '#333',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          ⏱ {fmt(timeLeftMs)}
+        </span>
+      ) : (
         <span
           style={{
             fontSize: '22px',
             fontWeight: 900,
             color: '#333',
-            letterSpacing: '-0.5px',
+            letterSpacing: '1px',
           }}
         >
-          pat
+          POPO
         </span>
-
-        {/* Score */}
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '20px', fontWeight: 800, color: '#333', lineHeight: 1 }}>
-            {totalScore.toLocaleString()}
-          </div>
-          {roundScore > 0 && (
-            <div style={{ fontSize: '11px', color: '#888', fontWeight: 600 }}>
-              +{roundScore} pts
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* Simple menu drawer */}
-      {menuOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 100,
-          }}
-          onClick={() => setMenuOpen(false)}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '240px',
-              height: '100%',
-              backgroundColor: '#fff',
-              boxShadow: '4px 0 12px rgba(0,0,0,0.12)',
-              padding: '24px 20px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div style={{ fontWeight: 900, fontSize: '20px', marginBottom: '16px', color: '#333' }}>
-              pat
-            </div>
-            <div style={{ color: '#555', fontSize: '14px', fontWeight: 600 }}>
-              ゴール数: {goalCount}
-            </div>
-            <div style={{ color: '#555', fontSize: '14px', fontWeight: 600 }}>
-              累計スコア: {totalScore.toLocaleString()}
-            </div>
-            <div
-              style={{
-                marginTop: 'auto',
-                fontSize: '12px',
-                color: '#aaa',
-                fontWeight: 600,
-              }}
-            >
-              Phase 1 v0.1
-            </div>
-          </div>
-        </div>
       )}
-    </>
+
+      {/* Score */}
+      <div style={{ textAlign: 'right', minWidth: '70px' }}>
+        <div style={{ fontSize: '20px', fontWeight: 800, color: '#333', lineHeight: 1 }}>
+          {totalScore.toLocaleString()}
+        </div>
+        {roundScore > 0 && (
+          <div style={{ fontSize: '11px', color: '#888', fontWeight: 600 }}>
+            +{roundScore}
+          </div>
+        )}
+      </div>
+    </header>
   );
 }

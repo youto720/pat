@@ -24,18 +24,41 @@ body {
   flex-direction: column;
 }
 
-.cell {
+/* ─── パタパタめくれるセル ─── */
+.cellWrap {
+  position: relative;
+  perspective: 600px;
   user-select: none;
   -webkit-user-select: none;
   cursor: pointer;
+}
+
+.cellInner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.28s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+
+.cellInner.flipped {
+  transform: rotateX(-180deg);
+}
+
+.cellFace {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   border-radius: 6px;
-  transition: background-color 0.1s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: clamp(10px, 2.5vw, 14px);
-  color: rgba(255, 255, 255, 0.9);
+  font-size: clamp(10px, 3vw, 16px);
+}
+
+.cellBack {
+  transform: rotateX(180deg);
 }
 
 @keyframes goalPulse {

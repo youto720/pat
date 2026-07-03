@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback } from 'react';
-import type { Cell } from '../types/game';
+import type { Cell, Palette } from '../types/game';
 import type { useGameLogic } from '../hooks/useGameLogic';
 import type { useSound } from '../hooks/useSound';
 
@@ -9,40 +9,20 @@ type SoundAPI = ReturnType<typeof useSound>;
 interface Props {
   game: GameLogic;
   sound: SoundAPI;
+  palette: Palette;
+  hasBgImage: boolean;
+  disabled?: boolean;
 }
 
-// セルのカラー（初期版）
-// function getCellBg(cell: Cell): string {
-  // if (cell.type === 'start') return '#F4845F';
-  // if (cell.type === 'goal') return '#E87070';
-  // if (cell.visited) return '#4CAF7D';
-// }
-
-// セルのカラー（テスト１）
-// function getCellBg(cell: Cell): string {
-//   if (cell.type === 'start') return '#66ccff';
-//   if (cell.type === 'goal') return '#cacacc';
-//   if (cell.visited) return '#66ccff';
-//   return '#F5F5F5';
-// }
-
-// セルのカラー（テスト２）
-function getCellBg(cell: Cell): string {
-  if (cell.type === 'start') return '#cacacc';
-  if (cell.type === 'goal') return '#cacacc';
-  if (cell.visited) return '#cacacc';
-  return '#66ccff';
-}
-
-function getCellLabel(cell: Cell): string {
-  // if (cell.type === 'start') return 'S';
-  // if (cell.type === 'goal') return 'G';
-  if (cell.type === 'start') return '';
-  if (cell.type === 'goal') return '';
+function cellSymbol(cell: Cell): string {
+  if (cell.type === 'start') return 'S';
+  if (cell.type === 'goal') return 'G';
+  if (cell.type === 'mine') return '💣';
+  if (cell.type === 'bonus') return '★';
   return '';
 }
 
-export function Grid({ game, sound }: Props) {
+export function Grid({ game, sound, palette, hasBgImage, disabled = false }: Props) {
   const gridRef = useRef<HTMLDivElement>(null);
   const isMouseDownRef = useRef(false);
 
@@ -55,12 +35,14 @@ export function Grid({ game, sound }: Props) {
   });
 
   const onCellStart = useCallback((row: number, col: number) => {
+    if (disabled) return;
     if (game.cells[row]?.[col]?.type !== 'start') return;
     game.beginTrace(row, col);
     sound.playStep(0);
-  }, [game, sound]);
+  }, [game, sound, disabled]);
 
   const onCellEnter = useCallback((row: number, col: number) => {
+    if (disabled) return;
     if (!game.isTracing || game.isGoal) return;
     if (game.path.length === 0) return;
 
@@ -82,22 +64,36 @@ export function Grid({ game, sound }: Props) {
     const dc = Math.abs(col - lastCol);
     if (!((dr === 1 && dc === 0) || (dr === 0 && dc === 1))) return;
 
-    const willBeGoal = game.path.length + 1 === game.config.rows * game.config.cols;
+    // 地雷 → 失敗
+    if (cell.type === 'mine') {
+      sound.playFail();
+      game.extendTrace(row, col);
+      return;
+    }
+
+    const willFinish =
+      game.mode === 'goal'
+        ? cell.type === 'goal'
+        : game.path.length + 1 === game.config.rows * game.config.cols;
+
     game.extendTrace(row, col);
 
-    if (willBeGoal) {
+    if (willFinish) {
       sound.playGoal();
+    } else if (cell.type === 'bonus') {
+      sound.playBonus();
     } else {
       sound.playStep(game.path.length);
     }
-  }, [game, sound]);
+  }, [game, sound, disabled]);
 
   const onPointerEnd = useCallback(() => {
+    if (disabled) return;
     if (game.isTracing && !game.isGoal) {
       sound.playReset();
       game.resetTrace();
     }
-  }, [game, sound]);
+  }, [game, sound, disabled]);
 
   // Keep ref updated every render (no deps = runs after every render)
   useEffect(() => {
@@ -110,7 +106,9 @@ export function Grid({ game, sound }: Props) {
     if (!el) return;
 
     const getCellAt = (x: number, y: number): [number, number] => {
-      const target = document.elementFromPoint(x, y) as HTMLElement | null;
+      // フリップ構造ではセル内部の face 要素がヒットするため closest で遡る
+      const hit = document.elementFromPoint(x, y) as HTMLElement | null;
+      const target = hit?.closest('[data-row]') as HTMLElement | null;
       const row = parseInt(target?.dataset.row ?? '-1');
       const col = parseInt(target?.dataset.col ?? '-1');
       return [row, col];
@@ -165,6 +163,18 @@ export function Grid({ game, sound }: Props) {
   const { cols, rows } = game.config;
   const gapPx = 4;
 
+  // 表面（未タップ）の色。S/G/地雷/加点はそれぞれ見分けがつくように
+  const frontBg = (cell: Cell): string => {
+    if (cell.type === 'goal') return '#E87070';
+    return palette.cell;
+  };
+
+  const frontFg = (cell: Cell): string => {
+    if (cell.type === 'goal') return 'rgba(255,255,255,0.95)';
+    if (cell.type === 'bonus') return '#B8860B';
+    return 'rgba(255,255,255,0.9)';
+  };
+
   return (
     <div
       style={{
@@ -177,10 +187,10 @@ export function Grid({ game, sound }: Props) {
     >
       <div
         style={{
-          border: '2px solid #E0E0E0',
+          border: '2px solid rgba(0,0,0,0.08)',
           borderRadius: '12px',
           padding: '8px',
-          backgroundColor: '#fafafa',
+          backgroundColor: hasBgImage ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.03)',
           boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
           animation: game.isGoal ? 'gridFlash 0.4s ease-out' : undefined,
         }}
@@ -202,25 +212,9 @@ export function Grid({ game, sound }: Props) {
           {game.cells.flat().map(cell => (
             <div
               key={`${cell.row}-${cell.col}`}
-              className="cell"
+              className="cellWrap"
               data-row={cell.row}
               data-col={cell.col}
-              style={{
-                backgroundColor: getCellBg(cell),
-                border: `1.5px solid ${cell.visited || cell.type !== 'normal' ? 'transparent' : '#E0E0E0'}`,
-                boxShadow: cell.visited && cell.type === 'normal'
-                  // ? '0 1px 4px rgba(76,175,125,0.3)'
-                  ? '0 1px 4px rgba(102, 204, 255,0.3)'
-                  : cell.type === 'start'
-                  // ? '0 1px 4px rgba(244,132,95,0.4)'
-                  ? '0 1px 4px rgba(102, 204, 255,0.4)'
-                  : cell.type === 'goal'
-                  // ? '0 1px 4px rgba(232,112,112,0.4)'
-                  ? '0 1px 4px rgba(202,202,204,0.4)'
-                  : 'none',
-                transform: cell.visited && cell.type === 'normal' ? 'scale(0.96)' : 'scale(1)',
-                transition: 'background-color 0.08s ease, transform 0.08s ease',
-              }}
               onMouseDown={e => {
                 e.preventDefault();
                 isMouseDownRef.current = true;
@@ -232,7 +226,29 @@ export function Grid({ game, sound }: Props) {
                 }
               }}
             >
-              {getCellLabel(cell)}
+              <div className={`cellInner${cell.visited ? ' flipped' : ''}`}>
+                {/* 表面：未タップ */}
+                <div
+                  className="cellFace"
+                  style={{
+                    backgroundColor: frontBg(cell),
+                    color: frontFg(cell),
+                    border: cell.type === 'normal' ? '1.5px solid rgba(0,0,0,0.08)' : 'none',
+                  }}
+                >
+                  {cellSymbol(cell)}
+                </div>
+                {/* 裏面：タップ後 */}
+                <div
+                  className="cellFace cellBack"
+                  style={{
+                    backgroundColor: palette.tap,
+                    color: 'rgba(255,255,255,0.9)',
+                  }}
+                >
+                  {cell.type === 'bonus' ? '★' : ''}
+                </div>
+              </div>
             </div>
           ))}
         </div>
