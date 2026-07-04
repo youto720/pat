@@ -5,9 +5,10 @@ interface StartProps {
   duration: number;
   onChangeDuration: (min: number) => void;
   onStart: () => void;
+  onCancel: () => void;
 }
 
-export function TimeAttackStart({ duration, onChangeDuration, onStart }: StartProps) {
+export function TimeAttackStart({ duration, onChangeDuration, onStart, onCancel }: StartProps) {
   return (
     <div
       style={{
@@ -63,6 +64,22 @@ export function TimeAttackStart({ duration, onChangeDuration, onStart }: StartPr
         }}
       >
         START
+      </button>
+      <button
+        onClick={onCancel}
+        style={{
+          padding: '10px 32px',
+          fontSize: '14px',
+          fontWeight: 800,
+          backgroundColor: 'transparent',
+          color: '#999',
+          border: '2px solid #DDD',
+          borderRadius: '10px',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+        }}
+      >
+        CANCEL
       </button>
     </div>
   );

@@ -78,7 +78,11 @@ export default function App() {
     return () => clearInterval(iv);
   }, [taEndTs]);
 
+  // TIME 選択画面のキャンセルで戻る先（直前の通常モード）
+  const prevModeRef = useRef<GameMode>('fill');
+
   const changeMode = (mode: GameMode) => {
+    if (mode !== 'time') prevModeRef.current = mode;
     game.newGame(mode);
     setTaEndTs(null);
     setTaTimeLeft(null);
@@ -140,6 +144,7 @@ export default function App() {
           duration={taDuration}
           onChangeDuration={setTaDuration}
           onStart={startTimeAttack}
+          onCancel={() => changeMode(prevModeRef.current)}
         />
       )}
 

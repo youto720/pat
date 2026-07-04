@@ -24,10 +24,11 @@ body {
   flex-direction: column;
 }
 
-/* ─── パタパタめくれるセル ─── */
+/* ─── パタパタめくれるセル（厚みのあるカード） ─── */
 .cellWrap {
   position: relative;
-  perspective: 600px;
+  perspective: 400px;
+  container-type: size;
   user-select: none;
   -webkit-user-select: none;
   cursor: pointer;
@@ -37,7 +38,7 @@ body {
   position: absolute;
   inset: 0;
   transform-style: preserve-3d;
-  transition: transform 0.28s cubic-bezier(0.4, 0.2, 0.2, 1);
+  transition: transform 0.32s cubic-bezier(0.4, 0.2, 0.2, 1);
 }
 
 .cellInner.flipped {
@@ -55,10 +56,46 @@ body {
   justify-content: center;
   font-weight: 800;
   font-size: clamp(10px, 3vw, 16px);
+  transform: translateZ(3px);
 }
 
 .cellBack {
-  transform: rotateX(180deg);
+  transform: rotateX(180deg) translateZ(3px);
+}
+
+/* カードの厚み（上下の側面。回転の途中で見える） */
+.cellSide {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  background: var(--edge, rgba(0, 0, 0, 0.35));
+  border-radius: 3px;
+}
+
+.cellSideTop {
+  top: -3px;
+  transform: rotateX(90deg);
+}
+
+.cellSideBottom {
+  bottom: -3px;
+  transform: rotateX(90deg);
+}
+
+/* 地雷・加点アイコンはマスの約60%サイズ（cqh 非対応ブラウザは fallback） */
+.faceIcon {
+  font-size: clamp(18px, 7vw, 44px);
+  font-size: 60cqh;
+  line-height: 1;
+}
+
+/* S / G の文字 */
+.faceLetter {
+  font-size: clamp(12px, 4vw, 22px);
+  font-size: 34cqh;
+  line-height: 1;
 }
 
 @keyframes goalPulse {

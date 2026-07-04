@@ -18,9 +18,9 @@ export function computeConfig(goalCount: number): GridConfig {
   };
 }
 
-// time モードは fill と同じ盤面（全マス埋め）で遊ぶ
+// time モードは goal と同じ盤面（S→G、地雷・加点あり）で遊ぶ
 function genFor(mode: GameMode, config: GridConfig, stage: number) {
-  return generateGrid(config, mode === 'goal' ? 'goal' : 'fill', stage);
+  return generateGrid(config, mode === 'fill' ? 'fill' : 'goal', stage);
 }
 
 function makeInitialState(mode: GameMode): GameState {
@@ -85,7 +85,7 @@ export function useGameLogic() {
 
       const totalCells = prev.config.rows * prev.config.cols;
       const finished =
-        prev.mode === 'goal' ? cell.type === 'goal' : path.length === totalCells;
+        prev.mode === 'fill' ? path.length === totalCells : cell.type === 'goal';
 
       if (finished) {
         const score = path.length * CELL_PT + bonusHits * BONUS_PT + CLEAR_PT;

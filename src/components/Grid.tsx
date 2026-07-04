@@ -71,10 +71,11 @@ export function Grid({ game, sound, palette, hasBgImage, disabled = false }: Pro
       return;
     }
 
+    // fill は全マス埋め、goal / time はゴールマス到達でクリア
     const willFinish =
-      game.mode === 'goal'
-        ? cell.type === 'goal'
-        : game.path.length + 1 === game.config.rows * game.config.cols;
+      game.mode === 'fill'
+        ? game.path.length + 1 === game.config.rows * game.config.cols
+        : cell.type === 'goal';
 
     game.extendTrace(row, col);
 
@@ -226,7 +227,16 @@ export function Grid({ game, sound, palette, hasBgImage, disabled = false }: Pro
                 }
               }}
             >
-              <div className={`cellInner${cell.visited ? ' flipped' : ''}`}>
+              <div
+                className={`cellInner${cell.visited ? ' flipped' : ''}`}
+                style={{
+                  // カード側面の色（マス色を暗くしたもの。color-mix 非対応なら CSS 側の既定色）
+                  ['--edge' as string]: `color-mix(in srgb, ${frontBg(cell)} 55%, #000)`,
+                }}
+              >
+                {/* 厚み（上下の側面） */}
+                <div className="cellSide cellSideTop" />
+                <div className="cellSide cellSideBottom" />
                 {/* 表面：未タップ */}
                 <div
                   className="cellFace"
@@ -236,7 +246,15 @@ export function Grid({ game, sound, palette, hasBgImage, disabled = false }: Pro
                     border: cell.type === 'normal' ? '1.5px solid rgba(0,0,0,0.08)' : 'none',
                   }}
                 >
-                  {cellSymbol(cell)}
+                  {cellSymbol(cell) && (
+                    <span
+                      className={
+                        cell.type === 'mine' || cell.type === 'bonus' ? 'faceIcon' : 'faceLetter'
+                      }
+                    >
+                      {cellSymbol(cell)}
+                    </span>
+                  )}
                 </div>
                 {/* 裏面：タップ後 */}
                 <div
@@ -246,7 +264,7 @@ export function Grid({ game, sound, palette, hasBgImage, disabled = false }: Pro
                     color: 'rgba(255,255,255,0.9)',
                   }}
                 >
-                  {cell.type === 'bonus' ? '★' : ''}
+                  {cell.type === 'bonus' ? <span className="faceIcon">★</span> : ''}
                 </div>
               </div>
             </div>
