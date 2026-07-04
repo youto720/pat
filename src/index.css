@@ -63,7 +63,7 @@ body {
   transform: rotateX(180deg) translateZ(3px);
 }
 
-/* カードの厚み（上下の側面。回転の途中で見える） */
+/* カードの厚み（上下の側面）。静止時は隠し、めくれている間だけ見せる */
 .cellSide {
   position: absolute;
   left: 2px;
@@ -72,6 +72,17 @@ body {
   background: rgba(0, 0, 0, 0.35);
   background: var(--edge, rgba(0, 0, 0, 0.35));
   border-radius: 3px;
+  opacity: 0;
+}
+
+.cellInner.flipped .cellSide {
+  animation: sideShow 0.32s ease-out;
+}
+
+@keyframes sideShow {
+  0% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 .cellSideTop {
@@ -84,10 +95,10 @@ body {
   transform: rotateX(90deg);
 }
 
-/* 地雷・加点アイコンはマスの約60%サイズ（cqh 非対応ブラウザは fallback） */
+/* 地雷・加点アイコンはマスの約40%サイズ（cqh 非対応ブラウザは fallback） */
 .faceIcon {
-  font-size: clamp(18px, 7vw, 44px);
-  font-size: 60cqh;
+  font-size: clamp(14px, 5vw, 30px);
+  font-size: 40cqh;
   line-height: 1;
 }
 

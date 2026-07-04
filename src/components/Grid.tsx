@@ -183,14 +183,14 @@ export function Grid({ game, sound, palette, hasBgImage, disabled = false }: Pro
         alignItems: 'center',
         justifyContent: 'center',
         flex: 1,
-        padding: '16px',
+        padding: '12px',
       }}
     >
       <div
         style={{
           border: '2px solid rgba(0,0,0,0.08)',
           borderRadius: '12px',
-          padding: '8px',
+          padding: '6px',
           backgroundColor: hasBgImage ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.03)',
           boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
           animation: game.isGoal ? 'gridFlash 0.4s ease-out' : undefined,
@@ -203,7 +203,7 @@ export function Grid({ game, sound, palette, hasBgImage, disabled = false }: Pro
             gridTemplateColumns: `repeat(${cols}, 1fr)`,
             gridTemplateRows: `repeat(${rows}, 1fr)`,
             gap: `${gapPx}px`,
-            width: `min(calc(100vw - 80px), calc((100dvh - 120px) * ${cols / rows}))`,
+            width: `min(calc(100vw - 40px), calc((100dvh - 104px) * ${cols / rows}))`,
             aspectRatio: `${cols} / ${rows}`,
             userSelect: 'none',
             WebkitUserSelect: 'none',
