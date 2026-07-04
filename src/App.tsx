@@ -133,7 +133,8 @@ export default function App() {
         game={game}
         sound={sound}
         palette={palette}
-        hasBgImage={!!settings.bgImage}
+        bgImage={settings.bgImage}
+        tapReveal={settings.tapReveal}
         disabled={gridDisabled}
       />
 

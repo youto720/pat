@@ -198,6 +198,22 @@ export function Menu({
             e.target.value = '';
           }}
         />
+        {/* タップしたマスに画像を表示（全部埋めると絵が完成） */}
+        <button
+          onClick={() => onUpdateSettings({ tapReveal: !settings.tapReveal })}
+          disabled={!settings.bgImage}
+          style={{
+            ...rowBtn,
+            marginTop: '6px',
+            textAlign: 'center',
+            backgroundColor: settings.bgImage && settings.tapReveal ? '#4CAF7D' : '#fff',
+            color: !settings.bgImage ? '#bbb' : settings.tapReveal ? '#fff' : '#333',
+            borderColor: settings.bgImage && settings.tapReveal ? '#4CAF7D' : '#E0E0E0',
+            cursor: settings.bgImage ? 'pointer' : 'default',
+          }}
+        >
+          REVEAL {settings.tapReveal ? 'ON' : 'OFF'}
+        </button>
 
         {/* その他 */}
         <div style={sectionLabel}>MORE</div>

@@ -10,7 +10,8 @@ interface Props {
   game: GameLogic;
   sound: SoundAPI;
   palette: Palette;
-  hasBgImage: boolean;
+  bgImage: string | null;
+  tapReveal: boolean;
   disabled?: boolean;
 }
 
@@ -22,7 +23,7 @@ function cellSymbol(cell: Cell): string {
   return '';
 }
 
-export function Grid({ game, sound, palette, hasBgImage, disabled = false }: Props) {
+export function Grid({ game, sound, palette, bgImage, tapReveal, disabled = false }: Props) {
   const gridRef = useRef<HTMLDivElement>(null);
   const isMouseDownRef = useRef(false);
 
@@ -176,6 +177,21 @@ export function Grid({ game, sound, palette, hasBgImage, disabled = false }: Pro
     return 'rgba(255,255,255,0.9)';
   };
 
+  // タップ後の裏面。背景画像 + REVEAL ON のときは、そのマス位置の画像断片を表示
+  // （全マス埋めるとグリッド全体で1枚の画像が完成する）
+  const backStyle = (cell: Cell): React.CSSProperties => {
+    if (bgImage && tapReveal) {
+      return {
+        backgroundImage: `url(${bgImage})`,
+        backgroundSize: `${cols * 100}% ${rows * 100}%`,
+        backgroundPosition: `${cols > 1 ? (cell.col / (cols - 1)) * 100 : 0}% ${
+          rows > 1 ? (cell.row / (rows - 1)) * 100 : 0
+        }%`,
+      };
+    }
+    return { backgroundColor: palette.tap };
+  };
+
   return (
     <div
       style={{
@@ -191,7 +207,7 @@ export function Grid({ game, sound, palette, hasBgImage, disabled = false }: Pro
           border: '2px solid rgba(0,0,0,0.08)',
           borderRadius: '12px',
           padding: '6px',
-          backgroundColor: hasBgImage ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.03)',
+          backgroundColor: bgImage ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.03)',
           boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
           animation: game.isGoal ? 'gridFlash 0.4s ease-out' : undefined,
         }}
@@ -260,7 +276,7 @@ export function Grid({ game, sound, palette, hasBgImage, disabled = false }: Pro
                 <div
                   className="cellFace cellBack"
                   style={{
-                    backgroundColor: palette.tap,
+                    ...backStyle(cell),
                     color: 'rgba(255,255,255,0.9)',
                   }}
                 >

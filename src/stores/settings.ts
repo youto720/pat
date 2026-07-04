@@ -6,6 +6,7 @@ export interface Settings {
   tapColor: string;
   randomColors: boolean;
   bgImage: string | null; // data URL
+  tapReveal: boolean; // 背景画像があるとき、タップ後のマスに画像を表示する
 }
 
 const KEY = 'popo_settings';
@@ -16,6 +17,7 @@ const DEFAULTS: Settings = {
   tapColor: '#cacacc',
   randomColors: false,
   bgImage: null,
+  tapReveal: true,
 };
 
 function load(): Settings {
