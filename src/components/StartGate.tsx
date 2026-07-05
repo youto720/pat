@@ -1,4 +1,6 @@
 import { unlockAudio } from '../hooks/useSound';
+import { DEFAULT_COLORS } from '../stores/settings';
+import { Logo } from './Logo';
 
 interface Props {
   onStart: () => void;
@@ -25,16 +27,8 @@ export function StartGate({ onStart }: Props) {
         fontFamily: 'Nunito, sans-serif',
       }}
     >
-      <div
-        style={{
-          fontSize: 'clamp(48px, 14vw, 72px)',
-          fontWeight: 900,
-          color: '#333',
-          letterSpacing: '4px',
-          marginBottom: '40px',
-        }}
-      >
-        POPO
+      <div style={{ marginBottom: '40px' }}>
+        <Logo height={72} />
       </div>
       <button
         onClick={handleStart}
@@ -42,12 +36,12 @@ export function StartGate({ onStart }: Props) {
           padding: '18px 48px',
           fontSize: '20px',
           fontWeight: 900,
-          backgroundColor: '#F4845F',
+          backgroundColor: DEFAULT_COLORS.cellColor,
           color: '#fff',
           border: 'none',
           borderRadius: '12px',
           cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(244,132,95,0.4)',
+          boxShadow: '0 4px 12px rgba(102,204,255,0.45)',
           fontFamily: 'inherit',
           letterSpacing: '1px',
         }}

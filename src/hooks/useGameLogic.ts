@@ -1,20 +1,22 @@
 import { useState, useCallback } from 'react';
 import type { GameState, GameMode, GridConfig } from '../types/game';
 import { generateGrid } from '../utils/gridGenerator';
+import { isBlinkOn } from '../utils/blink';
 
 const INITIAL_CONFIG: GridConfig = { cols: 4, rows: 4 };
-const MAX_COLS = 8;
-const MAX_ROWS = 8;
 
 const CELL_PT = 10;
 const BONUS_PT = 50;
 const CLEAR_PT = 100;
 
 export function computeConfig(goalCount: number): GridConfig {
+  // スマホは 8x8 上限、タブレット以上（768px〜）は 12x12 まで
+  const isTablet = typeof window !== 'undefined' && window.innerWidth >= 768;
+  const max = isTablet ? 12 : 8;
   const bonus = Math.floor(goalCount / 2);
   return {
-    cols: Math.min(INITIAL_CONFIG.cols + bonus, MAX_COLS),
-    rows: Math.min(INITIAL_CONFIG.rows + bonus, MAX_ROWS),
+    cols: Math.min(INITIAL_CONFIG.cols + bonus, max),
+    rows: Math.min(INITIAL_CONFIG.rows + bonus, max),
   };
 }
 
@@ -73,7 +75,8 @@ export function useGameLogic() {
       if (!cell || cell.visited) return prev;
 
       // 地雷 → チャレンジ失敗（トレースをリセット）
-      if (cell.type === 'mine') {
+      // ただし点滅地雷は消えている間なら通過できる
+      if (cell.type === 'mine' && (!cell.blink || isBlinkOn())) {
         const cells = prev.cells.map(r => r.map(c => ({ ...c, visited: false })));
         return { ...prev, cells, path: [], bonusHits: 0, isTracing: false };
       }
@@ -82,6 +85,20 @@ export function useGameLogic() {
       cells[row][col] = { ...cells[row][col], visited: true };
       const path: Array<[number, number]> = [...prev.path, [row, col]];
       const bonusHits = prev.bonusHits + (cell.type === 'bonus' ? 1 : 0);
+
+      // 加点マスを取ったら、残っている地雷を1つ消す
+      if (cell.type === 'bonus') {
+        const mines: Array<[number, number]> = [];
+        cells.forEach(r =>
+          r.forEach(c2 => {
+            if (c2.type === 'mine' && !c2.visited) mines.push([c2.row, c2.col]);
+          })
+        );
+        if (mines.length > 0) {
+          const [mr, mc] = mines[Math.floor(Math.random() * mines.length)];
+          cells[mr][mc] = { ...cells[mr][mc], type: 'normal', blink: undefined };
+        }
+      }
 
       const totalCells = prev.config.rows * prev.config.cols;
       const finished =

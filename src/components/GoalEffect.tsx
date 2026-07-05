@@ -87,8 +87,8 @@ export function GoalEffect({ score, willGrow }: Props) {
             fontFamily: 'Nunito, sans-serif',
             fontSize: 'clamp(40px, 12vw, 72px)',
             fontWeight: 900,
-            color: '#4CAF7D',
-            textShadow: '0 2px 8px rgba(76, 175, 125, 0.4)',
+            color: '#E87070',
+            textShadow: '0 2px 8px rgba(232, 112, 112, 0.4)',
             lineHeight: 1,
           }}
         >

@@ -7,6 +7,7 @@ import { StartGate } from './components/StartGate';
 import { Menu } from './components/Menu';
 import { Ranking } from './components/Ranking';
 import { TimeAttackStart, TimeAttackResult } from './components/TimeAttack';
+import { AdBanner, AdInterstitial } from './components/Ad';
 import { useGameLogic, computeConfig } from './hooks/useGameLogic';
 import { useSound } from './hooks/useSound';
 import { useSettings } from './stores/settings';
@@ -22,6 +23,7 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   const [showRank, setShowRank] = useState(false);
+  const [showAd, setShowAd] = useState(false);
   const [randomPal, setRandomPal] = useState<Palette>(() => randomPalette());
 
   // タイムアタック
@@ -46,9 +48,15 @@ export default function App() {
   }, [game.roundId, settings.randomColors]);
 
   // GOAL 演出が消えてから次ラウンドへ（グリッド拡大もこのタイミングで反映）
+  // 10ステージクリアごとに全画面広告（タイムアタック中は出さない）
   useEffect(() => {
     if (!game.isGoal) return;
-    const t = setTimeout(() => game.nextRound(), 3000);
+    const t = setTimeout(() => {
+      game.nextRound();
+      if (game.goalCount > 0 && game.goalCount % 10 === 0 && taEndTs == null) {
+        setShowAd(true);
+      }
+    }, 3000);
     return () => clearTimeout(t);
   }, [game.isGoal, game.goalCount]);
 
@@ -134,9 +142,11 @@ export default function App() {
         sound={sound}
         palette={palette}
         bgImage={settings.bgImage}
-        tapReveal={settings.tapReveal}
         disabled={gridDisabled}
       />
+
+      {/* 画面下の固定広告枠 */}
+      <AdBanner />
 
       {game.isGoal && <GoalEffect score={game.lastRoundScore} willGrow={willGrow} />}
 
@@ -177,6 +187,8 @@ export default function App() {
       )}
 
       {showRank && <Ranking onClose={() => setShowRank(false)} />}
+
+      {showAd && <AdInterstitial onClose={() => setShowAd(false)} />}
 
       {!started && <StartGate onStart={() => setStarted(true)} />}
 

@@ -1,7 +1,8 @@
 import { useRef } from 'react';
 import type { GameMode } from '../types/game';
 import type { Settings } from '../stores/settings';
-import { imageFileToDataUrl } from '../stores/settings';
+import { imageFileToDataUrl, DEFAULT_COLORS } from '../stores/settings';
+import { Logo } from './Logo';
 
 interface Props {
   mode: GameMode;
@@ -123,7 +124,7 @@ export function Menu({
         }}
         onClick={e => e.stopPropagation()}
       >
-        <div style={{ fontWeight: 900, fontSize: '22px', color: '#333' }}>POPO</div>
+        <Logo height={30} />
 
         {/* モード切替 */}
         <div style={sectionLabel}>MODE</div>
@@ -148,23 +149,72 @@ export function Menu({
         </div>
 
         {/* カラー設定 */}
-        <div style={sectionLabel}>COLOR</div>
+        <div style={{ ...sectionLabel, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          COLOR
+          <button
+            onClick={() => onUpdateSettings({ ...DEFAULT_COLORS })}
+            style={{
+              border: '1.5px solid #E0E0E0',
+              borderRadius: '6px',
+              backgroundColor: '#fff',
+              color: '#999',
+              fontSize: '10px',
+              fontWeight: 800,
+              padding: '3px 8px',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              letterSpacing: '0.5px',
+            }}
+          >
+            RESET
+          </button>
+        </div>
         {colorRow('BG', 'bgColor')}
         {colorRow('CELL', 'cellColor')}
         {colorRow('TAP', 'tapColor')}
-        <button
-          onClick={() => onUpdateSettings({ randomColors: !settings.randomColors })}
+        {/* ランダムカラー：トグルスイッチ */}
+        <div
           style={{
-            ...rowBtn,
-            marginTop: '4px',
-            backgroundColor: settings.randomColors ? '#4CAF7D' : '#fff',
-            color: settings.randomColors ? '#fff' : '#333',
-            borderColor: settings.randomColors ? '#4CAF7D' : '#E0E0E0',
-            textAlign: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '8px 2px',
+            fontSize: '13px',
+            fontWeight: 700,
+            color: '#333',
           }}
         >
-          RANDOM {settings.randomColors ? 'ON' : 'OFF'}
-        </button>
+          RANDOM
+          <button
+            onClick={() => onUpdateSettings({ randomColors: !settings.randomColors })}
+            aria-pressed={settings.randomColors}
+            style={{
+              position: 'relative',
+              width: '46px',
+              height: '26px',
+              borderRadius: '13px',
+              border: 'none',
+              backgroundColor: settings.randomColors ? '#4CAF7D' : '#ccc',
+              cursor: 'pointer',
+              transition: 'background-color 0.15s ease',
+              padding: 0,
+            }}
+          >
+            <span
+              style={{
+                position: 'absolute',
+                top: '2px',
+                left: settings.randomColors ? '22px' : '2px',
+                width: '22px',
+                height: '22px',
+                borderRadius: '50%',
+                backgroundColor: '#fff',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+                transition: 'left 0.15s ease',
+              }}
+            />
+          </button>
+        </div>
 
         {/* 背景画像 */}
         <div style={sectionLabel}>BG IMAGE</div>
@@ -198,22 +248,6 @@ export function Menu({
             e.target.value = '';
           }}
         />
-        {/* タップしたマスに画像を表示（全部埋めると絵が完成） */}
-        <button
-          onClick={() => onUpdateSettings({ tapReveal: !settings.tapReveal })}
-          disabled={!settings.bgImage}
-          style={{
-            ...rowBtn,
-            marginTop: '6px',
-            textAlign: 'center',
-            backgroundColor: settings.bgImage && settings.tapReveal ? '#4CAF7D' : '#fff',
-            color: !settings.bgImage ? '#bbb' : settings.tapReveal ? '#fff' : '#333',
-            borderColor: settings.bgImage && settings.tapReveal ? '#4CAF7D' : '#E0E0E0',
-            cursor: settings.bgImage ? 'pointer' : 'default',
-          }}
-        >
-          REVEAL {settings.tapReveal ? 'ON' : 'OFF'}
-        </button>
 
         {/* その他 */}
         <div style={sectionLabel}>MORE</div>

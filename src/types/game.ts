@@ -7,6 +7,7 @@ export interface Cell {
   col: number;
   type: CellType;
   visited: boolean;
+  blink?: boolean; // 点滅する地雷（消えている間は通過できる）
 }
 
 export interface GridConfig {

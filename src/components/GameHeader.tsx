@@ -1,3 +1,5 @@
+import { Logo } from './Logo';
+
 interface Props {
   totalScore: number;
   roundScore: number;
@@ -15,6 +17,7 @@ export function GameHeader({ totalScore, roundScore, timeLeftMs, onMenu }: Props
   return (
     <header
       style={{
+        position: 'relative',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -54,30 +57,31 @@ export function GameHeader({ totalScore, roundScore, timeLeftMs, onMenu }: Props
         ))}
       </button>
 
-      {/* Title / Timer */}
-      {timeLeftMs != null ? (
-        <span
-          style={{
-            fontSize: '22px',
-            fontWeight: 900,
-            color: timeLeftMs < 10000 ? '#E87070' : '#333',
-            fontVariantNumeric: 'tabular-nums',
-          }}
-        >
-          ⏱ {fmt(timeLeftMs)}
-        </span>
-      ) : (
-        <span
-          style={{
-            fontSize: '22px',
-            fontWeight: 900,
-            color: '#333',
-            letterSpacing: '1px',
-          }}
-        >
-          POPO
-        </span>
-      )}
+      {/* Title / Timer — 左右の要素幅に影響されないよう絶対配置で中央固定 */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+        }}
+      >
+        {timeLeftMs != null ? (
+          <span
+            style={{
+              fontSize: '22px',
+              fontWeight: 900,
+              color: timeLeftMs < 10000 ? '#E87070' : '#333',
+              fontVariantNumeric: 'tabular-nums',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            ⏱ {fmt(timeLeftMs)}
+          </span>
+        ) : (
+          <Logo height={28} />
+        )}
+      </div>
 
       {/* Score */}
       <div style={{ textAlign: 'right', minWidth: '70px' }}>

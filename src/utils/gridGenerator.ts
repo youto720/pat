@@ -73,9 +73,10 @@ function generateGoalGrid(config: GridConfig, stage: number): Generated {
   const total = rows * cols;
 
   // stage は 0 始まり。第1ステージ (stage=0) は地雷・加点なし
+  // 加点マスを取ると地雷が1つ消えるルールのため、両者は常に同数
   const mineCount =
     stage < 1 ? 0 : Math.min(1 + Math.floor((stage - 1) / 2), Math.floor(total * 0.12));
-  const bonusCount = stage < 1 ? 0 : Math.min(1 + Math.floor((stage - 1) / 3), 3);
+  const bonusCount = mineCount;
 
   for (let attempt = 0; attempt < 80; attempt++) {
     const start = randPos(rows, cols);
@@ -108,7 +109,16 @@ function generateGoalGrid(config: GridConfig, stage: number): Generated {
     mines.forEach(([r, c]) => typeMap.set(`${r},${c}`, 'mine'));
     bonuses.forEach(([r, c]) => typeMap.set(`${r},${c}`, 'bonus'));
 
+    // 約1/3の地雷は点滅タイプ（消えている間は通過できる）
+    const blinkSet = new Set(
+      mines.filter(() => Math.random() < 1 / 3).map(([r, c]) => `${r},${c}`)
+    );
+
     const cells = buildCells(rows, cols, (r, c) => typeMap.get(`${r},${c}`) ?? 'normal');
+    for (const key of blinkSet) {
+      const [r, c] = key.split(',').map(Number);
+      cells[r][c].blink = true;
+    }
     return { cells, startPos: start, goalPos: goal };
   }
 

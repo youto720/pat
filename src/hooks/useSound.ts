@@ -108,16 +108,17 @@ export function useSound() {
 
   function playGoal() {
     playWeb(ac => {
+      // 1.5倍速のファンファーレ
       [523.25, 659.25, 783.99].forEach((freq, i) => {
-        const t = ac.currentTime + i * 0.18;
+        const t = ac.currentTime + i * 0.12;
         const osc = ac.createOscillator();
         const gain = ac.createGain();
         osc.connect(gain); gain.connect(ac.destination);
         osc.type = 'triangle';
         osc.frequency.value = freq;
         gain.gain.setValueAtTime(0.35, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
-        osc.start(t); osc.stop(t + 0.38);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+        osc.start(t); osc.stop(t + 0.25);
       });
     });
   }

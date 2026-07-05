@@ -1,7 +1,9 @@
-import { useRef, useEffect, useCallback } from 'react';
-import type { Cell, Palette } from '../types/game';
+import { useRef, useEffect, useCallback, useState } from 'react';
+import type { Cell, GameMode, Palette } from '../types/game';
 import type { useGameLogic } from '../hooks/useGameLogic';
 import type { useSound } from '../hooks/useSound';
+import { isBlinkOn } from '../utils/blink';
+import { AD_BANNER_HEIGHT } from './Ad';
 
 type GameLogic = ReturnType<typeof useGameLogic>;
 type SoundAPI = ReturnType<typeof useSound>;
@@ -11,19 +13,19 @@ interface Props {
   sound: SoundAPI;
   palette: Palette;
   bgImage: string | null;
-  tapReveal: boolean;
   disabled?: boolean;
 }
 
-function cellSymbol(cell: Cell): string {
-  if (cell.type === 'start') return 'S';
+function cellSymbol(cell: Cell, mode: GameMode): string {
+  // FILL モードのスタートマスは文字なし（色で示す）
+  if (cell.type === 'start') return mode === 'fill' ? '' : 'S';
   if (cell.type === 'goal') return 'G';
   if (cell.type === 'mine') return '💣';
   if (cell.type === 'bonus') return '★';
   return '';
 }
 
-export function Grid({ game, sound, palette, bgImage, tapReveal, disabled = false }: Props) {
+export function Grid({ game, sound, palette, bgImage, disabled = false }: Props) {
   const gridRef = useRef<HTMLDivElement>(null);
   const isMouseDownRef = useRef(false);
 
@@ -65,8 +67,8 @@ export function Grid({ game, sound, palette, bgImage, tapReveal, disabled = fals
     const dc = Math.abs(col - lastCol);
     if (!((dr === 1 && dc === 0) || (dr === 0 && dc === 1))) return;
 
-    // 地雷 → 失敗
-    if (cell.type === 'mine') {
+    // 地雷 → 失敗（点滅地雷は消えている間なら通過できる）
+    if (cell.type === 'mine' && (!cell.blink || isBlinkOn())) {
       sound.playFail();
       game.extendTrace(row, col);
       return;
@@ -162,12 +164,21 @@ export function Grid({ game, sound, palette, bgImage, tapReveal, disabled = fals
     return () => window.removeEventListener('mouseup', onMouseUp);
   }, []);
 
+  // 点滅地雷の表示更新用クロック（値が変わったときだけ再レンダー）
+  const [blinkOn, setBlinkOn] = useState(isBlinkOn);
+  useEffect(() => {
+    const iv = setInterval(() => setBlinkOn(isBlinkOn()), 100);
+    return () => clearInterval(iv);
+  }, []);
+
   const { cols, rows } = game.config;
   const gapPx = 4;
 
   // 表面（未タップ）の色。S/G/地雷/加点はそれぞれ見分けがつくように
   const frontBg = (cell: Cell): string => {
     if (cell.type === 'goal') return '#E87070';
+    // FILL モードのスタートマスはタップ後と同じ色で示す
+    if (cell.type === 'start' && game.mode === 'fill') return palette.tap;
     return palette.cell;
   };
 
@@ -177,10 +188,10 @@ export function Grid({ game, sound, palette, bgImage, tapReveal, disabled = fals
     return 'rgba(255,255,255,0.9)';
   };
 
-  // タップ後の裏面。背景画像 + REVEAL ON のときは、そのマス位置の画像断片を表示
+  // タップ後の裏面。背景画像があれば、そのマス位置の画像断片を表示
   // （全マス埋めるとグリッド全体で1枚の画像が完成する）
   const backStyle = (cell: Cell): React.CSSProperties => {
-    if (bgImage && tapReveal) {
+    if (bgImage) {
       return {
         backgroundImage: `url(${bgImage})`,
         backgroundSize: `${cols * 100}% ${rows * 100}%`,
@@ -207,7 +218,8 @@ export function Grid({ game, sound, palette, bgImage, tapReveal, disabled = fals
           border: '2px solid rgba(0,0,0,0.08)',
           borderRadius: '12px',
           padding: '6px',
-          backgroundColor: bgImage ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.03)',
+          // 薄背景は一旦透明に（戻す場合: bgImage ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.03)'）
+          backgroundColor: 'transparent',
           boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
           animation: game.isGoal ? 'gridFlash 0.4s ease-out' : undefined,
         }}
@@ -219,7 +231,7 @@ export function Grid({ game, sound, palette, bgImage, tapReveal, disabled = fals
             gridTemplateColumns: `repeat(${cols}, 1fr)`,
             gridTemplateRows: `repeat(${rows}, 1fr)`,
             gap: `${gapPx}px`,
-            width: `min(calc(100vw - 40px), calc((100dvh - 104px) * ${cols / rows}))`,
+            width: `min(calc(100vw - 40px), calc((100dvh - ${104 + AD_BANNER_HEIGHT}px) * ${cols / rows}))`,
             aspectRatio: `${cols} / ${rows}`,
             userSelect: 'none',
             WebkitUserSelect: 'none',
@@ -262,13 +274,18 @@ export function Grid({ game, sound, palette, bgImage, tapReveal, disabled = fals
                     border: cell.type === 'normal' ? '1.5px solid rgba(0,0,0,0.08)' : 'none',
                   }}
                 >
-                  {cellSymbol(cell) && (
+                  {cellSymbol(cell, game.mode) && (
                     <span
                       className={
                         cell.type === 'mine' || cell.type === 'bonus' ? 'faceIcon' : 'faceLetter'
                       }
+                      style={
+                        cell.type === 'mine' && cell.blink
+                          ? { opacity: blinkOn ? 1 : 0.12, transition: 'opacity 0.25s ease' }
+                          : undefined
+                      }
                     >
-                      {cellSymbol(cell)}
+                      {cellSymbol(cell, game.mode)}
                     </span>
                   )}
                 </div>
