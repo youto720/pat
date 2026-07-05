@@ -36,7 +36,7 @@ export function GoalEffect({ score, willGrow }: Props) {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    const t = setTimeout(() => setVisible(false), 2800);
+    const t = setTimeout(() => setVisible(false), 2000);
     return () => clearTimeout(t);
   }, []);
 

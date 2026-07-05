@@ -56,7 +56,7 @@ export default function App() {
       if (game.goalCount > 0 && game.goalCount % 10 === 0 && taEndTs == null) {
         setShowAd(true);
       }
-    }, 3000);
+    }, 2200);
     return () => clearTimeout(t);
   }, [game.isGoal, game.goalCount]);
 

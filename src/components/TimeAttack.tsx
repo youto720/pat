@@ -1,4 +1,5 @@
 import { getUserName } from '../stores/ranking';
+import { DEFAULT_COLORS } from '../stores/settings';
 
 // ─── スタートパネル（TIME モードで未開始のとき） ───────────────────────
 interface StartProps {
@@ -54,12 +55,12 @@ export function TimeAttackStart({ duration, onChangeDuration, onStart, onCancel 
           padding: '16px 48px',
           fontSize: '20px',
           fontWeight: 900,
-          backgroundColor: '#F4845F',
+          backgroundColor: DEFAULT_COLORS.cellColor,
           color: '#fff',
           border: 'none',
           borderRadius: '12px',
           cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(244,132,95,0.4)',
+          boxShadow: '0 4px 12px rgba(102,204,255,0.45)',
           fontFamily: 'inherit',
         }}
       >
@@ -154,7 +155,7 @@ export function TimeAttackResult({ score, stages, onShowRank, onClose }: ResultP
               fontWeight: 900,
               border: 'none',
               borderRadius: '10px',
-              backgroundColor: '#F4845F',
+              backgroundColor: DEFAULT_COLORS.cellColor,
               color: '#fff',
               cursor: 'pointer',
               fontFamily: 'inherit',

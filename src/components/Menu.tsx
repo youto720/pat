@@ -194,7 +194,7 @@ export function Menu({
               height: '26px',
               borderRadius: '13px',
               border: 'none',
-              backgroundColor: settings.randomColors ? '#4CAF7D' : '#ccc',
+              backgroundColor: settings.randomColors ? DEFAULT_COLORS.cellColor : '#ccc',
               cursor: 'pointer',
               transition: 'background-color 0.15s ease',
               padding: 0,
