@@ -14,7 +14,7 @@ export function Logo({ height = 30 }: Props) {
       <img
         src="/logo.png"
         alt="PoPo"
-        style={{ height: `${height}px`, display: 'block' }}
+        style={{ height: `${height}px`, width: 'auto', alignSelf: 'flex-start', display: 'block' }}
         onError={() => setImgOk(false)}
       />
     );

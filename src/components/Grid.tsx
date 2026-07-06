@@ -215,12 +215,11 @@ export function Grid({ game, sound, palette, bgImage, disabled = false }: Props)
     >
       <div
         style={{
-          border: '2px solid rgba(0,0,0,0.08)',
-          borderRadius: '12px',
-          padding: '6px',
-          // 薄背景は一旦透明に（戻す場合: bgImage ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.03)'）
+          // 枠は視覚的に非表示（gridFlash 演出のため要素自体は残す）
+          border: 'none',
+          padding: 0,
           backgroundColor: 'transparent',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+          boxShadow: 'none',
           animation: game.isGoal ? 'gridFlash 0.4s ease-out' : undefined,
         }}
       >
