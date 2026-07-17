@@ -137,6 +137,42 @@ export function useSound() {
     });
   }
 
+  // PERFECT：GOAL と同じ約0.5秒に収めた、より豪華なアルペジオ+キラキラ
+  function playPerfect() {
+    playWeb(ac => {
+      // 4音アルペジオ（各音に1オクターブ上を薄く重ねてリッチに）
+      [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+        const t = ac.currentTime + i * 0.08;
+        const dur = i === 3 ? 0.25 : 0.16;
+        const layers: Array<[number, OscillatorType, number]> = [
+          [freq, 'triangle', 0.3],
+          [freq * 2, 'sine', 0.1],
+        ];
+        layers.forEach(([f, type, g]) => {
+          const osc = ac.createOscillator();
+          const gain = ac.createGain();
+          osc.connect(gain); gain.connect(ac.destination);
+          osc.type = type;
+          osc.frequency.value = f;
+          gain.gain.setValueAtTime(g, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+          osc.start(t); osc.stop(t + dur);
+        });
+      });
+      // 仕上げの高音「キラッ」
+      const t2 = ac.currentTime + 0.24;
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.connect(gain); gain.connect(ac.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(2093, t2);
+      osc.frequency.exponentialRampToValueAtTime(3136, t2 + 0.18);
+      gain.gain.setValueAtTime(0.08, t2);
+      gain.gain.exponentialRampToValueAtTime(0.001, t2 + 0.25);
+      osc.start(t2); osc.stop(t2 + 0.25);
+    });
+  }
+
   // 加点マス：コインを取ったような2音チャイム
   function playBonus() {
     playWeb(ac => {
@@ -169,5 +205,5 @@ export function useSound() {
     });
   }
 
-  return { playStep, playGoal, playReset, playBonus, playFail, unlockAudio };
+  return { playStep, playGoal, playPerfect, playReset, playBonus, playFail, unlockAudio };
 }

@@ -18,7 +18,7 @@ export const DEFAULT_COLORS = {
 
 const DEFAULTS: Settings = {
   ...DEFAULT_COLORS,
-  randomColors: false,
+  randomColors: true,
   bgImage: null,
 };
 

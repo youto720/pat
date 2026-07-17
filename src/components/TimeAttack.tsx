@@ -2,14 +2,30 @@ import { getUserName } from '../stores/ranking';
 import { DEFAULT_COLORS } from '../stores/settings';
 
 // ─── スタートパネル（TIME モードで未開始のとき） ───────────────────────
+// duration は秒単位
+export const TA_DURATIONS: Array<{ sec: number; label: string }> = [
+  { sec: 10, label: '10s' },
+  { sec: 30, label: '30s' },
+  { sec: 60, label: '1m' },
+];
+
 interface StartProps {
   duration: number;
-  onChangeDuration: (min: number) => void;
+  onChangeDuration: (sec: number) => void;
+  mode: 'fill' | 'goal';
+  onChangeMode: (mode: 'fill' | 'goal') => void;
   onStart: () => void;
   onCancel: () => void;
 }
 
-export function TimeAttackStart({ duration, onChangeDuration, onStart, onCancel }: StartProps) {
+export function TimeAttackStart({
+  duration,
+  onChangeDuration,
+  mode,
+  onChangeMode,
+  onStart,
+  onCancel,
+}: StartProps) {
   return (
     <div
       style={{
@@ -27,25 +43,49 @@ export function TimeAttackStart({ duration, onChangeDuration, onStart, onCancel 
     >
       <div style={{ fontSize: '28px', fontWeight: 900, color: '#333' }}>⏱ TIME ATTACK</div>
       <div style={{ display: 'flex', gap: '10px' }}>
-        {[1, 3, 5].map(min => (
+        {TA_DURATIONS.map(d => (
           <button
-            key={min}
-            onClick={() => onChangeDuration(min)}
+            key={d.sec}
+            onClick={() => onChangeDuration(d.sec)}
             style={{
               width: '64px',
               height: '64px',
               fontSize: '18px',
               fontWeight: 900,
               border: '3px solid',
-              borderColor: duration === min ? '#333' : '#DDD',
+              borderColor: duration === d.sec ? '#333' : '#DDD',
               borderRadius: '50%',
-              backgroundColor: duration === min ? '#333' : '#fff',
-              color: duration === min ? '#fff' : '#333',
+              backgroundColor: duration === d.sec ? '#333' : '#fff',
+              color: duration === d.sec ? '#fff' : '#333',
               cursor: 'pointer',
               fontFamily: 'inherit',
             }}
           >
-            {min}m
+            {d.label}
+          </button>
+        ))}
+      </div>
+      {/* ルール選択（FILL: 全マス埋め / GOAL: 🏁到達） */}
+      <div style={{ display: 'flex', gap: '8px' }}>
+        {(['fill', 'goal'] as const).map(m => (
+          <button
+            key={m}
+            onClick={() => onChangeMode(m)}
+            style={{
+              padding: '10px 24px',
+              fontSize: '14px',
+              fontWeight: 900,
+              border: '2px solid',
+              borderColor: mode === m ? '#333' : '#DDD',
+              borderRadius: '10px',
+              backgroundColor: mode === m ? '#333' : '#fff',
+              color: mode === m ? '#fff' : '#333',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              letterSpacing: '1px',
+            }}
+          >
+            {m.toUpperCase()}
           </button>
         ))}
       </div>

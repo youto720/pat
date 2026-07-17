@@ -132,6 +132,13 @@ body {
   100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
 }
 
+/* クラッカー紙吹雪（PERFECT 時）: 山なりに打ち上がって落ちながら消える */
+@keyframes confettiPop {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  55% { transform: translate(var(--cx), var(--cy)) rotate(var(--r1)); opacity: 1; }
+  100% { transform: translate(var(--cx2), var(--cy2)) rotate(var(--r2)); opacity: 0; }
+}
+
 @keyframes gridFlash {
   0% { opacity: 1; }
   30% { opacity: 0.6; background-color: rgba(78, 205, 125, 0.15); }

@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
-import type { Cell, GameMode, Palette } from '../types/game';
+import type { Cell, Palette } from '../types/game';
 import type { useGameLogic } from '../hooks/useGameLogic';
 import type { useSound } from '../hooks/useSound';
 import { isBlinkOn } from '../utils/blink';
@@ -16,10 +16,9 @@ interface Props {
   disabled?: boolean;
 }
 
-function cellSymbol(cell: Cell, mode: GameMode): string {
-  // FILL モードのスタートマスは文字なし（色で示す）
-  if (cell.type === 'start') return mode === 'fill' ? '' : 'S';
-  if (cell.type === 'goal') return 'G';
+function cellSymbol(cell: Cell): string {
+  // スタートマスは全モード共通で文字なし（TAP色で示す）
+  if (cell.type === 'goal') return '🏁';
   if (cell.type === 'mine') return '💣';
   if (cell.type === 'bonus') return '★';
   return '';
@@ -39,10 +38,8 @@ export function Grid({ game, sound, palette, bgImage, disabled = false }: Props)
 
   const onCellStart = useCallback((row: number, col: number) => {
     if (disabled) return;
-    if (game.cells[row]?.[col]?.type !== 'start') return;
     game.beginTrace(row, col);
-    sound.playStep(0);
-  }, [game, sound, disabled]);
+  }, [game, disabled]);
 
   const onCellEnter = useCallback((row: number, col: number) => {
     if (disabled) return;
@@ -57,47 +54,38 @@ export function Grid({ game, sound, palette, bgImage, disabled = false }: Props)
 
     // Revisited cell → reset
     if (cell.visited) {
-      sound.playReset();
       game.resetTrace();
       return;
     }
 
-    // Non-adjacent → ignore (finger moved fast)
-    const dr = Math.abs(row - lastRow);
-    const dc = Math.abs(col - lastCol);
-    if (!((dr === 1 && dc === 0) || (dr === 0 && dc === 1))) return;
-
-    // 地雷 → 失敗（点滅地雷は消えている間なら通過できる）
-    if (cell.type === 'mine' && (!cell.blink || isBlinkOn())) {
-      sound.playFail();
-      game.extendTrace(row, col);
-      return;
-    }
-
-    // fill は全マス埋め、goal / time はゴールマス到達でクリア
-    const willFinish =
-      game.mode === 'fill'
-        ? game.path.length + 1 === game.config.rows * game.config.cols
-        : cell.type === 'goal';
-
+    // 成否・種別の判定と効果音イベントの発行はロジック側が行う
     game.extendTrace(row, col);
-
-    if (willFinish) {
-      sound.playGoal();
-    } else if (cell.type === 'bonus') {
-      sound.playBonus();
-    } else {
-      sound.playStep(game.path.length);
-    }
-  }, [game, sound, disabled]);
+  }, [game, disabled]);
 
   const onPointerEnd = useCallback(() => {
     if (disabled) return;
     if (game.isTracing && !game.isGoal) {
-      sound.playReset();
       game.resetTrace();
     }
-  }, [game, sound, disabled]);
+  }, [game, disabled]);
+
+  // ロジックが発行した効果音イベントを1回だけ再生する。
+  // タッチ処理時の状態判定に依存しないため、再レンダーのタイミングに
+  // かかわらず「状態が変わったのに音が鳴らない」ことがない
+  const lastSoundIdRef = useRef(0);
+  useEffect(() => {
+    const ev = game.soundEvent;
+    if (!ev || ev.id === lastSoundIdRef.current) return;
+    lastSoundIdRef.current = ev.id;
+    switch (ev.kind) {
+      case 'step': sound.playStep(ev.step ?? 0); break;
+      case 'bonus': sound.playBonus(); break;
+      case 'goal': sound.playGoal(); break;
+      case 'perfect': sound.playPerfect(); break;
+      case 'fail': sound.playFail(); break;
+      case 'reset': sound.playReset(); break;
+    }
+  }, [game.soundEvent, sound]);
 
   // Keep ref updated every render (no deps = runs after every render)
   useEffect(() => {
@@ -174,16 +162,13 @@ export function Grid({ game, sound, palette, bgImage, disabled = false }: Props)
   const { cols, rows } = game.config;
   const gapPx = 4;
 
-  // 表面（未タップ）の色。S/G/地雷/加点はそれぞれ見分けがつくように
+  // 表面（未タップ）の色。スタートは TAP 色、それ以外はマス色
   const frontBg = (cell: Cell): string => {
-    if (cell.type === 'goal') return '#E87070';
-    // FILL モードのスタートマスはタップ後と同じ色で示す
-    if (cell.type === 'start' && game.mode === 'fill') return palette.tap;
+    if (cell.type === 'start') return palette.tap;
     return palette.cell;
   };
 
   const frontFg = (cell: Cell): string => {
-    if (cell.type === 'goal') return 'rgba(255,255,255,0.95)';
     if (cell.type === 'bonus') return '#B8860B';
     return 'rgba(255,255,255,0.9)';
   };
@@ -273,18 +258,16 @@ export function Grid({ game, sound, palette, bgImage, disabled = false }: Props)
                     border: cell.type === 'normal' ? '1.5px solid rgba(0,0,0,0.08)' : 'none',
                   }}
                 >
-                  {cellSymbol(cell, game.mode) && (
+                  {cellSymbol(cell) && (
                     <span
-                      className={
-                        cell.type === 'mine' || cell.type === 'bonus' ? 'faceIcon' : 'faceLetter'
-                      }
+                      className="faceIcon"
                       style={
                         cell.type === 'mine' && cell.blink
                           ? { opacity: blinkOn ? 1 : 0.12, transition: 'opacity 0.25s ease' }
                           : undefined
                       }
                     >
-                      {cellSymbol(cell, game.mode)}
+                      {cellSymbol(cell)}
                     </span>
                   )}
                 </div>

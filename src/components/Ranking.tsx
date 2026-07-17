@@ -114,7 +114,9 @@ export function Ranking({ onClose }: Props) {
                 {i + 1}
               </span>
               <span style={{ flex: 1, fontWeight: 800, color: '#333' }}>{e.name}</span>
-              <span style={{ fontSize: '11px', color: '#aaa', fontWeight: 700 }}>{e.duration}m</span>
+              <span style={{ fontSize: '11px', color: '#aaa', fontWeight: 700 }}>
+                {e.duration >= 60 ? `${Math.round(e.duration / 60)}m` : `${e.duration}s`}
+              </span>
               <span style={{ fontWeight: 900, color: '#333' }}>{e.score.toLocaleString()}</span>
             </div>
           ))}

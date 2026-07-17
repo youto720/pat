@@ -26,8 +26,9 @@ export default function App() {
   const [showAd, setShowAd] = useState(false);
   const [randomPal, setRandomPal] = useState<Palette>(() => randomPalette());
 
-  // タイムアタック
-  const [taDuration, setTaDuration] = useState(1);
+  // タイムアタック（duration は秒単位）
+  const [taDuration, setTaDuration] = useState(10);
+  const [taMode, setTaMode] = useState<'fill' | 'goal'>('goal');
   const [taEndTs, setTaEndTs] = useState<number | null>(null);
   const [taTimeLeft, setTaTimeLeft] = useState<number | null>(null);
   const [taResult, setTaResult] = useState<{ score: number; stages: number } | null>(null);
@@ -91,7 +92,7 @@ export default function App() {
 
   const changeMode = (mode: GameMode) => {
     if (mode !== 'time') prevModeRef.current = mode;
-    game.newGame(mode);
+    game.newGame(mode, taMode);
     setTaEndTs(null);
     setTaTimeLeft(null);
     setTaResult(null);
@@ -99,10 +100,16 @@ export default function App() {
   };
 
   const startTimeAttack = () => {
-    game.newGame('time');
+    game.newGame('time', taMode);
     setTaResult(null);
-    setTaEndTs(Date.now() + taDuration * 60_000);
-    setTaTimeLeft(taDuration * 60_000);
+    setTaEndTs(Date.now() + taDuration * 1000);
+    setTaTimeLeft(taDuration * 1000);
+  };
+
+  // スタート画面でルールを切り替えたら、背後の盤面も引き直す
+  const changeTaMode = (m: 'fill' | 'goal') => {
+    setTaMode(m);
+    game.newGame('time', m);
   };
 
   const taRunning = taEndTs != null;
@@ -148,12 +155,16 @@ export default function App() {
       {/* 画面下の固定広告枠 */}
       <AdBanner />
 
-      {game.isGoal && <GoalEffect score={game.lastRoundScore} willGrow={willGrow} />}
+      {game.isGoal && (
+        <GoalEffect score={game.lastRoundScore} willGrow={willGrow} perfect={game.isPerfect} />
+      )}
 
       {started && game.mode === 'time' && !taRunning && !taResult && (
         <TimeAttackStart
           duration={taDuration}
           onChangeDuration={setTaDuration}
+          mode={taMode}
+          onChangeMode={changeTaMode}
           onStart={startTimeAttack}
           onCancel={() => changeMode(prevModeRef.current)}
         />

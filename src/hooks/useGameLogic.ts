@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { GameState, GameMode, GridConfig } from '../types/game';
+import type { GameState, GameMode, GridConfig, SoundKind, TimeVariant } from '../types/game';
 import { generateGrid } from '../utils/gridGenerator';
 import { isBlinkOn } from '../utils/blink';
 
@@ -8,6 +8,7 @@ const INITIAL_CONFIG: GridConfig = { cols: 4, rows: 4 };
 const CELL_PT = 10;
 const BONUS_PT = 50;
 const CLEAR_PT = 100;
+const PERFECT_PT = 300; // goal/time モードで全マス埋めてクリアした時の追加ボーナス
 
 export function computeConfig(goalCount: number): GridConfig {
   // スマホは 8x8 上限、タブレット以上（768px〜）は 12x12 まで
@@ -20,16 +21,32 @@ export function computeConfig(goalCount: number): GridConfig {
   };
 }
 
-// time モードは goal と同じ盤面（S→G、地雷・加点あり）で遊ぶ
-function genFor(mode: GameMode, config: GridConfig, stage: number) {
-  return generateGrid(config, mode === 'fill' ? 'fill' : 'goal', stage);
+// time モードは timeVariant（fill / goal）のルールで遊ぶ
+function effectiveMode(mode: GameMode, timeVariant: TimeVariant): 'fill' | 'goal' {
+  return mode === 'time' ? timeVariant : mode;
 }
 
-function makeInitialState(mode: GameMode): GameState {
-  const { cells, startPos, goalPos } = genFor(mode, INITIAL_CONFIG, 0);
+function genFor(mode: GameMode, timeVariant: TimeVariant, config: GridConfig, stage: number) {
+  return generateGrid(config, effectiveMode(mode, timeVariant), stage);
+}
+
+// ラウンド開始時の盤面（pristine）からの復元用ディープコピー
+function cloneCells(cells: GameState['pristineCells']): GameState['cells'] {
+  return cells.map(row => row.map(c => ({ ...c, visited: false })));
+}
+
+// 効果音イベントを発行（id はゲームをまたいで単調増加）
+function soundOf(prev: GameState, kind: SoundKind, step?: number) {
+  return { id: (prev.soundEvent?.id ?? 0) + 1, kind, step };
+}
+
+function makeInitialState(mode: GameMode, timeVariant: TimeVariant): GameState {
+  const { cells, startPos, goalPos } = genFor(mode, timeVariant, INITIAL_CONFIG, 0);
   return {
     mode,
+    timeVariant,
     cells,
+    pristineCells: cloneCells(cells),
     startPos,
     goalPos,
     path: [],
@@ -39,16 +56,23 @@ function makeInitialState(mode: GameMode): GameState {
     goalCount: 0,
     isTracing: false,
     isGoal: false,
+    isPerfect: false,
     config: INITIAL_CONFIG,
     roundId: 0,
+    soundEvent: null,
   };
 }
 
 export function useGameLogic() {
-  const [state, setState] = useState<GameState>(() => makeInitialState('fill'));
+  const [state, setState] = useState<GameState>(() => makeInitialState('fill', 'goal'));
 
-  const newGame = useCallback((mode: GameMode) => {
-    setState(prev => ({ ...makeInitialState(mode), roundId: prev.roundId + 1 }));
+  const newGame = useCallback((mode: GameMode, timeVariant: TimeVariant = 'goal') => {
+    setState(prev => ({
+      ...makeInitialState(mode, timeVariant),
+      roundId: prev.roundId + 1,
+      // id の単調増加を保つため直前のイベントを引き継ぐ（再生はされない）
+      soundEvent: prev.soundEvent,
+    }));
   }, []);
 
   const beginTrace = useCallback((row: number, col: number) => {
@@ -56,9 +80,17 @@ export function useGameLogic() {
       if (prev.isGoal) return prev;
       if (prev.cells[row]?.[col]?.type !== 'start') return prev;
 
-      const cells = prev.cells.map(r => r.map(c => ({ ...c, visited: false })));
+      // 前回の失敗で消えた地雷なども含め、ラウンド開始時の盤面から再開
+      const cells = cloneCells(prev.pristineCells);
       cells[row][col] = { ...cells[row][col], visited: true };
-      return { ...prev, cells, path: [[row, col]], bonusHits: 0, isTracing: true };
+      return {
+        ...prev,
+        cells,
+        path: [[row, col]],
+        bonusHits: 0,
+        isTracing: true,
+        soundEvent: soundOf(prev, 'step', 0),
+      };
     });
   }, []);
 
@@ -74,11 +106,17 @@ export function useGameLogic() {
       const cell = prev.cells[row]?.[col];
       if (!cell || cell.visited) return prev;
 
-      // 地雷 → チャレンジ失敗（トレースをリセット）
+      // 地雷 → チャレンジ失敗（盤面をラウンド開始時の状態に復元）
       // ただし点滅地雷は消えている間なら通過できる
       if (cell.type === 'mine' && (!cell.blink || isBlinkOn())) {
-        const cells = prev.cells.map(r => r.map(c => ({ ...c, visited: false })));
-        return { ...prev, cells, path: [], bonusHits: 0, isTracing: false };
+        return {
+          ...prev,
+          cells: cloneCells(prev.pristineCells),
+          path: [],
+          bonusHits: 0,
+          isTracing: false,
+          soundEvent: soundOf(prev, 'fail'),
+        };
       }
 
       const cells = prev.cells.map(r => r.map(c => ({ ...c })));
@@ -101,11 +139,18 @@ export function useGameLogic() {
       }
 
       const totalCells = prev.config.rows * prev.config.cols;
+      const effMode = effectiveMode(prev.mode, prev.timeVariant);
       const finished =
-        prev.mode === 'fill' ? path.length === totalCells : cell.type === 'goal';
+        effMode === 'fill' ? path.length === totalCells : cell.type === 'goal';
 
       if (finished) {
-        const score = path.length * CELL_PT + bonusHits * BONUS_PT + CLEAR_PT;
+        // goal ルールで全マス埋めてゴールしたら PERFECT
+        const isPerfect = effMode !== 'fill' && path.length === totalCells;
+        const score =
+          path.length * CELL_PT +
+          bonusHits * BONUS_PT +
+          CLEAR_PT +
+          (isPerfect ? PERFECT_PT : 0);
         // config はここでは増やさない（GOAL 演出が消えた後 nextRound で反映）
         return {
           ...prev,
@@ -117,35 +162,56 @@ export function useGameLogic() {
           goalCount: prev.goalCount + 1,
           isTracing: false,
           isGoal: true,
+          isPerfect,
+          soundEvent: soundOf(prev, isPerfect ? 'perfect' : 'goal'),
         };
       }
 
-      return { ...prev, cells, path, bonusHits };
+      return {
+        ...prev,
+        cells,
+        path,
+        bonusHits,
+        soundEvent: soundOf(
+          prev,
+          cell.type === 'bonus' ? 'bonus' : 'step',
+          path.length - 1
+        ),
+      };
     });
   }, []);
 
   const resetTrace = useCallback(() => {
     setState(prev => {
       if (!prev.isTracing) return prev;
-      const cells = prev.cells.map(r => r.map(c => ({ ...c, visited: false })));
-      return { ...prev, cells, path: [], bonusHits: 0, isTracing: false };
+      // 加点で消した地雷なども含め、ラウンド開始時の盤面に復元
+      return {
+        ...prev,
+        cells: cloneCells(prev.pristineCells),
+        path: [],
+        bonusHits: 0,
+        isTracing: false,
+        soundEvent: soundOf(prev, 'reset'),
+      };
     });
   }, []);
 
   const nextRound = useCallback(() => {
     setState(prev => {
       const config = computeConfig(prev.goalCount);
-      const { cells, startPos, goalPos } = genFor(prev.mode, config, prev.goalCount);
+      const { cells, startPos, goalPos } = genFor(prev.mode, prev.timeVariant, config, prev.goalCount);
       return {
         ...prev,
         config,
         cells,
+        pristineCells: cloneCells(cells),
         startPos,
         goalPos,
         path: [],
         bonusHits: 0,
         isTracing: false,
         isGoal: false,
+        isPerfect: false,
         roundId: prev.roundId + 1,
       };
     });
@@ -153,6 +219,8 @@ export function useGameLogic() {
 
   return {
     ...state,
+    // time モード時は timeVariant を反映した実効ルール
+    effectiveMode: effectiveMode(state.mode, state.timeVariant),
     roundScore: state.path.length * CELL_PT + state.bonusHits * BONUS_PT,
     newGame,
     beginTrace,
