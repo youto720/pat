@@ -1,7 +1,9 @@
 import { useState } from 'react';
 
-// public/logo.png があればそれを表示し、無ければ筆記体テキストで代用する。
-// ロゴ画像を差し替えるときは public/logo.png を置くだけでよい。
+// public/logo_po_01.png があればそれを表示し、無ければテキストで代用する。
+// ロゴ画像を差し替えるときは public/ に置いて LOGO_SRC を変えるだけでよい。
+const LOGO_SRC = '/logo_po_01.png';
+
 interface Props {
   height?: number;
 }
@@ -12,8 +14,8 @@ export function Logo({ height = 30 }: Props) {
   if (imgOk) {
     return (
       <img
-        src="/logo.png"
-        alt="PoPo"
+        src={LOGO_SRC}
+        alt="Po"
         style={{ height: `${height}px`, width: 'auto', alignSelf: 'flex-start', display: 'block' }}
         onError={() => setImgOk(false)}
       />
@@ -23,7 +25,8 @@ export function Logo({ height = 30 }: Props) {
   return (
     <span
       style={{
-        fontFamily: "'Pacifico', 'Nunito', cursive",
+        fontFamily: "'Nunito', sans-serif",
+        fontWeight: 900,
         fontSize: `${height * 0.95}px`,
         color: '#3a3d45',
         lineHeight: 1.2,
@@ -31,7 +34,7 @@ export function Logo({ height = 30 }: Props) {
         whiteSpace: 'nowrap',
       }}
     >
-      PoPo
+      Po
     </span>
   );
 }

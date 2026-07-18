@@ -2,7 +2,6 @@ import { useRef } from 'react';
 import type { GameMode } from '../types/game';
 import type { Settings } from '../stores/settings';
 import { imageFileToDataUrl, DEFAULT_COLORS } from '../stores/settings';
-import { Logo } from './Logo';
 
 interface Props {
   mode: GameMode;
@@ -124,7 +123,7 @@ export function Menu({
         }}
         onClick={e => e.stopPropagation()}
       >
-        <Logo height={30} />
+        {/* ロゴはヘッダー中央に常時表示されているため、ドロワー上部には置かない */}
 
         {/* モード切替 */}
         <div style={sectionLabel}>MODE</div>
@@ -269,7 +268,7 @@ export function Menu({
         </div>
 
         <div style={{ marginTop: 'auto', paddingTop: '16px', fontSize: '11px', color: '#bbb', fontWeight: 700 }}>
-          POPO v0.2
+          Po v0.2
         </div>
       </div>
     </div>
