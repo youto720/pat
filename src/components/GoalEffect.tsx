@@ -151,6 +151,7 @@ export function GoalEffect({ score, willGrow, perfect }: Props) {
           textAlign: 'center',
           // ★リキッドグラス風カード（同化防止）。ここを調整してください
           padding: '20px 36px',
+					width: '100%',
           background: 'rgba(255, 255, 255, 0.7)',
           borderRadius: '10px',
           boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',

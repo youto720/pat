@@ -4,9 +4,9 @@ import { DEFAULT_COLORS } from '../stores/settings';
 // ─── スタートパネル（TIME モードで未開始のとき） ───────────────────────
 // duration は秒単位
 export const TA_DURATIONS: Array<{ sec: number; label: string }> = [
-  { sec: 10, label: '10s' },
   { sec: 30, label: '30s' },
   { sec: 60, label: '1m' },
+  { sec: 180, label: '3m' },
 ];
 
 interface StartProps {

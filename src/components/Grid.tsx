@@ -18,7 +18,7 @@ interface Props {
 
 function cellSymbol(cell: Cell): string {
   // スタートマスは全モード共通で文字なし（TAP色で示す）
-  if (cell.type === 'goal') return '🏁';
+  if (cell.type === 'goal') return '🚩';
   if (cell.type === 'mine') return '💣';
   if (cell.type === 'bonus') return '★';
   return '';

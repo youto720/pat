@@ -27,8 +27,8 @@ export default function App() {
   const [randomPal, setRandomPal] = useState<Palette>(() => randomPalette());
 
   // タイムアタック（duration は秒単位）
-  const [taDuration, setTaDuration] = useState(10);
-  const [taMode, setTaMode] = useState<'fill' | 'goal'>('goal');
+  const [taDuration, setTaDuration] = useState(30);
+  const [taMode, setTaMode] = useState<'fill' | 'goal'>('fill');
   const [taEndTs, setTaEndTs] = useState<number | null>(null);
   const [taTimeLeft, setTaTimeLeft] = useState<number | null>(null);
   const [taResult, setTaResult] = useState<{ score: number; stages: number } | null>(null);

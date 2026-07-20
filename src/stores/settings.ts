@@ -12,8 +12,10 @@ const KEY = 'popo_settings';
 
 export const DEFAULT_COLORS = {
   bgColor: '#ffffff',
-  cellColor: '#66ccff',
-  tapColor: '#cacacc',
+  // cellColor: '#66ccff',
+  cellColor: '#2fb6b3',
+  // tapColor: '#cacacc',
+  tapColor: '#f19117',
 };
 
 const DEFAULTS: Settings = {
