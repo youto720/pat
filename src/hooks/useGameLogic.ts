@@ -4,6 +4,7 @@ import { generateGrid } from '../utils/gridGenerator';
 import { isBlinkOn } from '../utils/blink';
 
 const INITIAL_CONFIG: GridConfig = { cols: 4, rows: 4 };
+const ENDLESS_CONFIG: GridConfig = { cols: 6, rows: 6 };
 
 const CELL_PT = 10;
 const BONUS_PT = 50;
@@ -21,13 +22,25 @@ export function computeConfig(goalCount: number): GridConfig {
   };
 }
 
-// time モードは timeVariant（fill / goal）のルールで遊ぶ
-function effectiveMode(mode: GameMode, timeVariant: TimeVariant): 'fill' | 'goal' {
+// time モードは timeVariant（fill / goal / endless）のルールで遊ぶ
+function effectiveMode(mode: GameMode, timeVariant: TimeVariant): 'fill' | 'goal' | 'endless' {
   return mode === 'time' ? timeVariant : mode;
 }
 
-function genFor(mode: GameMode, timeVariant: TimeVariant, config: GridConfig, stage: number) {
-  return generateGrid(config, effectiveMode(mode, timeVariant), stage);
+// endless は fill と同じ「全マス埋め」の盤面を使う
+function boardKind(effMode: 'fill' | 'goal' | 'endless'): 'fill' | 'goal' {
+  return effMode === 'goal' ? 'goal' : 'fill';
+}
+
+function genFor(
+  mode: GameMode,
+  timeVariant: TimeVariant,
+  config: GridConfig,
+  stage: number,
+  forcedStart?: [number, number]
+) {
+  const effMode = effectiveMode(mode, timeVariant);
+  return generateGrid(config, boardKind(effMode), stage, forcedStart);
 }
 
 // ラウンド開始時の盤面（pristine）からの復元用ディープコピー
@@ -41,7 +54,10 @@ function soundOf(prev: GameState, kind: SoundKind, step?: number) {
 }
 
 function makeInitialState(mode: GameMode, timeVariant: TimeVariant): GameState {
-  const { cells, startPos, goalPos } = genFor(mode, timeVariant, INITIAL_CONFIG, 0);
+  // ENDLESS は途中で拡大できない（指を離さず続けるため）ので最初から 6x6
+  const config =
+    effectiveMode(mode, timeVariant) === 'endless' ? ENDLESS_CONFIG : INITIAL_CONFIG;
+  const { cells, startPos, goalPos } = genFor(mode, timeVariant, config, 0);
   return {
     mode,
     timeVariant,
@@ -57,7 +73,7 @@ function makeInitialState(mode: GameMode, timeVariant: TimeVariant): GameState {
     isTracing: false,
     isGoal: false,
     isPerfect: false,
-    config: INITIAL_CONFIG,
+    config,
     roundId: 0,
     soundEvent: null,
   };
@@ -141,7 +157,33 @@ export function useGameLogic() {
       const totalCells = prev.config.rows * prev.config.cols;
       const effMode = effectiveMode(prev.mode, prev.timeVariant);
       const finished =
-        effMode === 'fill' ? path.length === totalCells : cell.type === 'goal';
+        effMode === 'goal' ? cell.type === 'goal' : path.length === totalCells;
+
+      // ENDLESS: 演出を挟まず、埋め終わった位置をそのまま次の盤面のスタートにして続行
+      if (finished && effMode === 'endless') {
+        const score = path.length * CELL_PT + CLEAR_PT;
+        const next = genFor(prev.mode, prev.timeVariant, prev.config, prev.goalCount + 1, [
+          row,
+          col,
+        ]);
+        const nextCells = next.cells.map(r => r.map(c => ({ ...c })));
+        nextCells[row][col] = { ...nextCells[row][col], visited: true };
+        return {
+          ...prev,
+          cells: nextCells,
+          pristineCells: cloneCells(next.cells),
+          startPos: next.startPos,
+          goalPos: next.goalPos,
+          path: [[row, col]],
+          bonusHits: 0,
+          totalScore: prev.totalScore + score,
+          lastRoundScore: score,
+          goalCount: prev.goalCount + 1,
+          isTracing: true, // 指は離さないのでトレース継続
+          roundId: prev.roundId + 1,
+          soundEvent: soundOf(prev, 'goal'),
+        };
+      }
 
       if (finished) {
         // goal ルールで全マス埋めてゴールしたら PERFECT

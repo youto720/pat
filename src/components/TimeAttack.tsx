@@ -1,5 +1,6 @@
 import { getUserName } from '../stores/ranking';
-import { DEFAULT_COLORS } from '../stores/settings';
+import { MAIN_COLOR, MAIN_COLOR_RGB } from '../stores/settings';
+import { useIsPro } from '../stores/plan';
 
 // ─── スタートパネル（TIME モードで未開始のとき） ───────────────────────
 // duration は秒単位
@@ -9,11 +10,23 @@ export const TA_DURATIONS: Array<{ sec: number; label: string }> = [
   { sec: 180, label: '3m' },
 ];
 
+// PRO の自由設定で許す範囲（秒）
+export const TA_MIN_SEC = 5;
+export const TA_MAX_SEC = 3600;
+
+export type TaRule = 'fill' | 'goal' | 'endless';
+
+const TA_RULES: Array<{ id: TaRule; label: string }> = [
+  { id: 'fill', label: 'FILL' },
+  { id: 'goal', label: 'GOAL' },
+  { id: 'endless', label: '∞' },
+];
+
 interface StartProps {
   duration: number;
   onChangeDuration: (sec: number) => void;
-  mode: 'fill' | 'goal';
-  onChangeMode: (mode: 'fill' | 'goal') => void;
+  mode: TaRule;
+  onChangeMode: (mode: TaRule) => void;
   onStart: () => void;
   onCancel: () => void;
 }
@@ -26,6 +39,8 @@ export function TimeAttackStart({
   onStart,
   onCancel,
 }: StartProps) {
+  const isPro = useIsPro();
+
   return (
     <div
       style={{
@@ -65,27 +80,66 @@ export function TimeAttackStart({
           </button>
         ))}
       </div>
-      {/* ルール選択（FILL: 全マス埋め / GOAL: 🏁到達） */}
+      {/* PRO: 秒数を自由に指定できる */}
+      {isPro ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '11px', fontWeight: 800, color: '#999', letterSpacing: '1px' }}>
+            ★ CUSTOM
+          </span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={TA_MIN_SEC}
+            max={TA_MAX_SEC}
+            value={duration}
+            onChange={e => {
+              const v = Number(e.target.value);
+              if (Number.isFinite(v)) {
+                onChangeDuration(Math.min(TA_MAX_SEC, Math.max(TA_MIN_SEC, Math.round(v))));
+              }
+            }}
+            style={{
+              width: '84px',
+              padding: '8px 10px',
+              fontSize: '15px',
+              fontWeight: 800,
+              textAlign: 'center',
+              border: '2px solid #DDD',
+              borderRadius: '10px',
+              fontFamily: 'inherit',
+              color: '#333',
+              outline: 'none',
+            }}
+          />
+          <span style={{ fontSize: '13px', fontWeight: 800, color: '#999' }}>sec</span>
+        </div>
+      ) : (
+        <div style={{ fontSize: '10px', fontWeight: 700, color: '#bbb', letterSpacing: '0.5px' }}>
+          ★ PRO: SET ANY TIME
+        </div>
+      )}
+
+      {/* ルール選択（FILL: 全マス埋め / GOAL: 🚩到達 / ∞: 途切れず続ける） */}
       <div style={{ display: 'flex', gap: '8px' }}>
-        {(['fill', 'goal'] as const).map(m => (
+        {TA_RULES.map(r => (
           <button
-            key={m}
-            onClick={() => onChangeMode(m)}
+            key={r.id}
+            onClick={() => onChangeMode(r.id)}
             style={{
               padding: '10px 24px',
               fontSize: '14px',
               fontWeight: 900,
               border: '2px solid',
-              borderColor: mode === m ? '#333' : '#DDD',
+              borderColor: mode === r.id ? '#333' : '#DDD',
               borderRadius: '10px',
-              backgroundColor: mode === m ? '#333' : '#fff',
-              color: mode === m ? '#fff' : '#333',
+              backgroundColor: mode === r.id ? '#333' : '#fff',
+              color: mode === r.id ? '#fff' : '#333',
               cursor: 'pointer',
               fontFamily: 'inherit',
               letterSpacing: '1px',
             }}
           >
-            {m.toUpperCase()}
+            {r.label}
           </button>
         ))}
       </div>
@@ -95,12 +149,12 @@ export function TimeAttackStart({
           padding: '16px 48px',
           fontSize: '20px',
           fontWeight: 900,
-          backgroundColor: DEFAULT_COLORS.cellColor,
+          backgroundColor: MAIN_COLOR,
           color: '#fff',
           border: 'none',
           borderRadius: '12px',
           cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(102,204,255,0.45)',
+          boxShadow: `0 4px 12px rgba(${MAIN_COLOR_RGB}, 0.45)`,
           fontFamily: 'inherit',
         }}
       >
@@ -195,7 +249,7 @@ export function TimeAttackResult({ score, stages, onShowRank, onClose }: ResultP
               fontWeight: 900,
               border: 'none',
               borderRadius: '10px',
-              backgroundColor: DEFAULT_COLORS.cellColor,
+              backgroundColor: MAIN_COLOR,
               color: '#fff',
               cursor: 'pointer',
               fontFamily: 'inherit',

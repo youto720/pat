@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { getRanks, getUserName } from '../stores/ranking';
 import type { RankPeriod } from '../stores/ranking';
+import { MAIN_COLOR_RGB } from '../stores/settings';
 
 interface Props {
   onClose: () => void;
@@ -106,7 +107,7 @@ export function Ranking({ onClose }: Props) {
                 gap: '10px',
                 padding: '8px 6px',
                 borderBottom: '1px solid #F0F0F0',
-                backgroundColor: e.name === me ? 'rgba(76,175,125,0.08)' : 'transparent',
+                backgroundColor: e.name === me ? `rgba(${MAIN_COLOR_RGB}, 0.1)` : 'transparent',
                 borderRadius: '6px',
               }}
             >

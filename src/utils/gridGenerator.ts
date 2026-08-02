@@ -26,15 +26,20 @@ function randPos(rows: number, cols: number): [number, number] {
 }
 
 // ─── FILL モード：全マス埋め ──────────────────────────────────────────
-function generateFillGrid(config: GridConfig): Generated {
+// forcedStart を渡すとその位置から始まる盤面を作る（ENDLESS の継ぎ目で使う）
+function generateFillGrid(config: GridConfig, forcedStart?: [number, number]): Generated {
   const { rows, cols } = config;
   const isOdd = (rows * cols) % 2 === 1;
 
   // 奇数マスの時はハミルトン路が存在する「多数派の色」(r+c が偶数) からのみスタート
   let start: [number, number];
-  do {
-    start = randPos(rows, cols);
-  } while (isOdd && (start[0] + start[1]) % 2 !== 0);
+  if (forcedStart) {
+    start = forcedStart;
+  } else {
+    do {
+      start = randPos(rows, cols);
+    } while (isOdd && (start[0] + start[1]) % 2 !== 0);
+  }
 
   const cells = buildCells(rows, cols, (r, c) =>
     r === start[0] && c === start[1] ? 'start' : 'normal'
@@ -136,7 +141,8 @@ function generateGoalGrid(config: GridConfig, stage: number): Generated {
 export function generateGrid(
   config: GridConfig,
   mode: 'fill' | 'goal',
-  stage: number
+  stage: number,
+  forcedStart?: [number, number]
 ): Generated {
-  return mode === 'goal' ? generateGoalGrid(config, stage) : generateFillGrid(config);
+  return mode === 'goal' ? generateGoalGrid(config, stage) : generateFillGrid(config, forcedStart);
 }

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
-// public/logo_po_01.png があればそれを表示し、無ければテキストで代用する。
+// public/logo_po_02.png があればそれを表示し、無ければテキストで代用する。
 // ロゴ画像を差し替えるときは public/ に置いて LOGO_SRC を変えるだけでよい。
-const LOGO_SRC = '/logo_po_01.png';
+const LOGO_SRC = '/logo_po_02.png';
 
 interface Props {
   height?: number;

@@ -1,9 +1,10 @@
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useLayoutEffect, useCallback, useState } from 'react';
 import type { Cell, Palette } from '../types/game';
 import type { useGameLogic } from '../hooks/useGameLogic';
 import type { useSound } from '../hooks/useSound';
 import { isBlinkOn } from '../utils/blink';
 import { AD_BANNER_HEIGHT } from './Ad';
+import { useIsPro } from '../stores/plan';
 
 type GameLogic = ReturnType<typeof useGameLogic>;
 type SoundAPI = ReturnType<typeof useSound>;
@@ -27,6 +28,7 @@ function cellSymbol(cell: Cell): string {
 export function Grid({ game, sound, palette, bgImage, disabled = false }: Props) {
   const gridRef = useRef<HTMLDivElement>(null);
   const isMouseDownRef = useRef(false);
+  const isPro = useIsPro();
 
   // Keep latest handler functions accessible from stable event listeners
   const handlersRef = useRef({
@@ -159,8 +161,46 @@ export function Grid({ game, sound, palette, bgImage, disabled = false }: Props)
     return () => clearInterval(iv);
   }, []);
 
+  // 背景画像の元サイズ（縦横比の維持に使う）
+  const [imgSize, setImgSize] = useState<{ w: number; h: number } | null>(null);
+  useEffect(() => {
+    if (!bgImage) {
+      setImgSize(null);
+      return;
+    }
+    let alive = true;
+    const img = new Image();
+    img.onload = () => {
+      if (alive) setImgSize({ w: img.naturalWidth, h: img.naturalHeight });
+    };
+    img.src = bgImage;
+    return () => {
+      alive = false;
+    };
+  }, [bgImage]);
+
   const { cols, rows } = game.config;
   const gapPx = 4;
+
+  // グリッドの実サイズ（マスごとの画像切り出し位置の計算に使う）。
+  // ResizeObserver はタブ非表示だと発火しないので、サイズが変わる契機
+  // （行列数の変化・ウィンドウリサイズ）で自前に測る
+  const [gridSize, setGridSize] = useState<{ w: number; h: number } | null>(null);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = gridRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setGridSize(prev =>
+        prev && Math.abs(prev.w - r.width) < 0.5 && Math.abs(prev.h - r.height) < 0.5
+          ? prev
+          : { w: r.width, h: r.height }
+      );
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [cols, rows, bgImage]);
 
   // 表面（未タップ）の色。スタートは TAP 色、それ以外はマス色
   const frontBg = (cell: Cell): string => {
@@ -173,16 +213,30 @@ export function Grid({ game, sound, palette, bgImage, disabled = false }: Props)
     return 'rgba(255,255,255,0.9)';
   };
 
+  // グリッド全体に対して object-fit: cover / object-position: center 相当に
+  // 画像を配置したときの、表示サイズと左上オフセット（px）
+  const coverLayout = (() => {
+    if (!bgImage || !imgSize || !gridSize) return null;
+    const scale = Math.max(gridSize.w / imgSize.w, gridSize.h / imgSize.h);
+    const dw = imgSize.w * scale;
+    const dh = imgSize.h * scale;
+    return { dw, dh, ox: (gridSize.w - dw) / 2, oy: (gridSize.h - dh) / 2 };
+  })();
+
   // タップ後の裏面。背景画像があれば、そのマス位置の画像断片を表示
   // （全マス埋めるとグリッド全体で1枚の画像が完成する）
   const backStyle = (cell: Cell): React.CSSProperties => {
-    if (bgImage) {
+    if (bgImage && coverLayout && gridSize) {
+      // グリッド内でのこのマスの左上位置（gap を含む）
+      const cellW = (gridSize.w - gapPx * (cols - 1)) / cols;
+      const cellH = (gridSize.h - gapPx * (rows - 1)) / rows;
+      const cellLeft = cell.col * (cellW + gapPx);
+      const cellTop = cell.row * (cellH + gapPx);
       return {
         backgroundImage: `url(${bgImage})`,
-        backgroundSize: `${cols * 100}% ${rows * 100}%`,
-        backgroundPosition: `${cols > 1 ? (cell.col / (cols - 1)) * 100 : 0}% ${
-          rows > 1 ? (cell.row / (rows - 1)) * 100 : 0
-        }%`,
+        backgroundSize: `${coverLayout.dw}px ${coverLayout.dh}px`,
+        backgroundPosition: `${coverLayout.ox - cellLeft}px ${coverLayout.oy - cellTop}px`,
+        backgroundRepeat: 'no-repeat',
       };
     }
     return { backgroundColor: palette.tap };
@@ -215,7 +269,9 @@ export function Grid({ game, sound, palette, bgImage, disabled = false }: Props)
             gridTemplateColumns: `repeat(${cols}, 1fr)`,
             gridTemplateRows: `repeat(${rows}, 1fr)`,
             gap: `${gapPx}px`,
-            width: `min(calc(100vw - 40px), calc((100dvh - ${104 + AD_BANNER_HEIGHT}px) * ${cols / rows}))`,
+            width: `min(calc(100vw - 40px), calc((100dvh - ${
+              104 + (isPro ? 0 : AD_BANNER_HEIGHT)
+            }px) * ${cols / rows}))`,
             aspectRatio: `${cols} / ${rows}`,
             userSelect: 'none',
             WebkitUserSelect: 'none',

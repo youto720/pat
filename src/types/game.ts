@@ -1,6 +1,6 @@
 export type CellType = 'normal' | 'start' | 'goal' | 'mine' | 'bonus';
 
-export type GameMode = 'fill' | 'goal' | 'time';
+export type GameMode = 'fill' | 'goal' | 'time' | 'endless';
 
 export interface Cell {
   row: number;
@@ -21,7 +21,7 @@ export interface Palette {
   tap: string;
 }
 
-export type TimeVariant = 'fill' | 'goal';
+export type TimeVariant = 'fill' | 'goal' | 'endless';
 
 // ゲームロジックが発行する効果音イベント。
 // 状態が実際に変化した時だけ id が増え、表示側は id の変化で1回だけ再生する

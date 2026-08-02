@@ -4,6 +4,8 @@ interface Props {
   score: number;
   willGrow: boolean;
   perfect: boolean;
+  /** FILL ルールのクリアは GOAL! ではなく Complete! と出す */
+  fillRule: boolean;
 }
 
 interface Particle {
@@ -32,7 +34,37 @@ interface Confetti {
   delay: number;
 }
 
+// Complete! / GOAL! 用の控えめな「キラリン」
+interface Sparkle {
+  id: number;
+  x: string;
+  y: string;
+  size: number;
+  color: string;
+  duration: number;
+  delay: number;
+}
+
 const COLORS = ['#F4845F', '#E87070', '#4CAF7D', '#FFD166', '#06D6A0', '#118AB2'];
+
+const SPARKLE_COLORS = ['#FFD166', '#FFFFFF', '#FFE9A8'];
+
+// カードの周囲にぱらぱらと配置して、順に瞬かせる
+function makeSparkles(count: number): Sparkle[] {
+  return Array.from({ length: count }, (_, i) => {
+    const angle = (i / count) * 2 * Math.PI + Math.random() * 0.8;
+    const dist = 80 + Math.random() * 130;
+    return {
+      id: i,
+      x: `${Math.cos(angle) * dist}px`,
+      y: `${Math.sin(angle) * dist * 0.7}px`,
+      size: 16 + Math.random() * 18,
+      color: SPARKLE_COLORS[i % SPARKLE_COLORS.length],
+      duration: 1 + Math.random() * 0.5,
+      delay: Math.random() * 0.7,
+    };
+  });
+}
 
 function makeParticles(count: number): Particle[] {
   return Array.from({ length: count }, (_, i) => {
@@ -74,9 +106,11 @@ function makeConfetti(count: number): Confetti[] {
   });
 }
 
-export function GoalEffect({ score, willGrow, perfect }: Props) {
-  const [particles] = useState(() => makeParticles(20));
+export function GoalEffect({ score, willGrow, perfect, fillRule }: Props) {
+  // PERFECT は派手に（パーティクル + 紙吹雪）、通常クリアは控えめに（キラリンのみ）
+  const [particles] = useState(() => (perfect ? makeParticles(20) : []));
   const [confetti] = useState(() => (perfect ? makeConfetti(26) : []));
+  const [sparkles] = useState(() => (perfect ? [] : makeSparkles(14)));
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
@@ -112,6 +146,26 @@ export function GoalEffect({ score, willGrow, perfect }: Props) {
             '--tx': p.tx,
             '--ty': p.ty,
             animation: `particleFly ${p.duration}s ease-out forwards`,
+          }}
+        />
+      ))}
+
+      {/* キラリン（Complete! / GOAL! のとき）。4方向にとがった星を順に瞬かせる */}
+      {sparkles.map(s => (
+        <div
+          key={`sp-${s.id}`}
+          style={{
+            position: 'absolute',
+            width: `${s.size}px`,
+            height: `${s.size}px`,
+            backgroundColor: s.color,
+            clipPath:
+              'polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%)',
+            opacity: 0,
+            // @ts-expect-error CSS custom properties
+            '--sx': s.x,
+            '--sy': s.y,
+            animation: `sparkleTwinkle ${s.duration}s ease-in-out ${s.delay}s forwards`,
           }}
         />
       ))}
@@ -170,7 +224,7 @@ export function GoalEffect({ score, willGrow, perfect }: Props) {
             whiteSpace: 'nowrap',
           }}
         >
-          {perfect ? 'PERFECT!!' : 'GOAL!'}
+          {perfect ? 'PERFECT!!' : fillRule ? 'Complete!' : 'GOAL!'}
         </div>
         <div
           style={{

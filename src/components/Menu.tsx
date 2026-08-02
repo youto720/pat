@@ -1,7 +1,14 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { GameMode } from '../types/game';
 import type { Settings } from '../stores/settings';
-import { imageFileToDataUrl, DEFAULT_COLORS } from '../stores/settings';
+import {
+  imageFileToDataUrl,
+  DEFAULT_COLORS,
+  MAIN_COLOR,
+  MAX_BG_IMAGES_FREE,
+  MAX_BG_IMAGES_PRO,
+} from '../stores/settings';
+import { DEV_PLAN_TOGGLE, useIsPro, useTogglePro } from '../stores/plan';
 
 interface Props {
   mode: GameMode;
@@ -10,13 +17,19 @@ interface Props {
   onUpdateSettings: (patch: Partial<Settings>) => void;
   onShowRank: () => void;
   onShowDebug: () => void;
+  onShowContact: () => void;
   onClose: () => void;
+  saveError: boolean;
 }
+
+// ドロワーの幅。閉じる✕の位置計算にも使う
+const DRAWER_WIDTH = 260;
 
 const MODES: Array<{ id: GameMode; label: string }> = [
   { id: 'fill', label: 'FILL' },
   { id: 'goal', label: 'GOAL' },
   { id: 'time', label: 'TIME' },
+  { id: 'endless', label: '∞ ENDLESS' },
 ];
 
 const sectionLabel: React.CSSProperties = {
@@ -41,6 +54,9 @@ const rowBtn: React.CSSProperties = {
   textAlign: 'left',
 };
 
+// 開閉アニメーションの長さ（ms）
+const ANIM_MS = 500;
+
 export function Menu({
   mode,
   settings,
@@ -48,9 +64,23 @@ export function Menu({
   onUpdateSettings,
   onShowRank,
   onShowDebug,
+  onShowContact,
   onClose,
+  saveError,
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const isPro = useIsPro();
+  const togglePro = useTogglePro();
+
+  // 開閉は CSS アニメーションで行う（rAF はタブ非表示時に発火せず、
+  // 開いたのに出てこない事故が起きうるため使わない）
+  const [closing, setClosing] = useState(false);
+
+  // 閉じるアニメーションを見せてから実際の処理（アンマウント等）を実行する
+  const closeThen = (action: () => void) => {
+    setClosing(true);
+    setTimeout(action, ANIM_MS);
+  };
 
   const fullscreenSupported =
     typeof document !== 'undefined' && !!document.documentElement.requestFullscreen;
@@ -63,11 +93,18 @@ export function Menu({
     }
   };
 
+  // 無料は1枚だけ（差し替え）、PRO は上限まで追加できる
+  const images = settings.bgImages;
+  const maxImages = isPro ? MAX_BG_IMAGES_PRO : MAX_BG_IMAGES_FREE;
+  const canAddImage = images.length < maxImages || !isPro;
+
   const onPickImage = async (file: File | null) => {
     if (!file) return;
     try {
       const dataUrl = await imageFileToDataUrl(file);
-      onUpdateSettings({ bgImage: dataUrl });
+      onUpdateSettings({
+        bgImages: isPro ? [...images, dataUrl].slice(0, MAX_BG_IMAGES_PRO) : [dataUrl],
+      });
     } catch {
       // 読めない画像は無視
     }
@@ -105,13 +142,65 @@ export function Menu({
   );
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 100 }} onClick={onClose}>
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 100 }}
+      onClick={() => closeThen(onClose)}
+    >
+      {/* 閉じる✕。ドロワーの外に fixed で置くので、メニュー内をスクロールしても
+          常に同じ位置に表示され続ける。位置はヘッダーのハンバーガーを
+          ドロワー幅ぶん右にずらしたところ。開閉時はハンバーガーの位置から
+          スライドして出入りする */}
+      <button
+        onClick={e => {
+          e.stopPropagation();
+          closeThen(onClose);
+        }}
+        aria-label="close menu"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: `${DRAWER_WIDTH + 16}px`,
+          height: '56px',
+          width: '38px',
+          zIndex: 101,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          // キーフレーム側で使うドロワー幅
+          ['--drawer-w' as string]: `${DRAWER_WIDTH}px`,
+          animation: `${closing ? 'menuXOut' : 'menuXIn'} ${ANIM_MS}ms ease both`,
+        }}
+      >
+        <span style={{ position: 'relative', display: 'block', width: '22px', height: '22px' }}>
+          {[45, -45].map(deg => (
+            <span
+              key={deg}
+              style={{
+                position: 'absolute',
+                top: '10px',
+                left: 0,
+                display: 'block',
+                width: '22px',
+                height: '2px',
+                backgroundColor: '#333',
+                borderRadius: '2px',
+                transform: `rotate(${deg}deg)`,
+              }}
+            />
+          ))}
+        </span>
+      </button>
+
       <div
         style={{
           position: 'absolute',
           top: 0,
           left: 0,
-          width: '260px',
+          width: `${DRAWER_WIDTH}px`,
           height: '100%',
           backgroundColor: '#fff',
           boxShadow: '4px 0 12px rgba(0,0,0,0.12)',
@@ -120,6 +209,7 @@ export function Menu({
           flexDirection: 'column',
           overflowY: 'auto',
           fontFamily: 'Nunito, sans-serif',
+          animation: `${closing ? 'drawerOut' : 'drawerIn'} ${ANIM_MS}ms ease both`,
         }}
         onClick={e => e.stopPropagation()}
       >
@@ -127,14 +217,14 @@ export function Menu({
 
         {/* モード切替 */}
         <div style={sectionLabel}>MODE</div>
-        <div style={{ display: 'flex', gap: '6px' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {MODES.map(m => (
             <button
               key={m.id}
-              onClick={() => onChangeMode(m.id)}
+              onClick={() => closeThen(() => onChangeMode(m.id))}
               style={{
                 ...rowBtn,
-                flex: 1,
+                flex: '1 1 45%',
                 textAlign: 'center',
                 padding: '10px 0',
                 backgroundColor: mode === m.id ? '#333' : '#fff',
@@ -193,7 +283,7 @@ export function Menu({
               height: '26px',
               borderRadius: '13px',
               border: 'none',
-              backgroundColor: settings.randomColors ? DEFAULT_COLORS.cellColor : '#ccc',
+              backgroundColor: settings.randomColors ? MAIN_COLOR : '#ccc',
               cursor: 'pointer',
               transition: 'background-color 0.15s ease',
               padding: 0,
@@ -215,28 +305,97 @@ export function Menu({
           </button>
         </div>
 
-        {/* 背景画像 */}
-        <div style={sectionLabel}>BG IMAGE</div>
+        {/* 背景画像（PRO は複数枚 → ラウンドごとにランダム表示） */}
+        <div style={{ ...sectionLabel, display: 'flex', justifyContent: 'space-between' }}>
+          <span>BG IMAGE</span>
+          <span style={{ color: '#bbb' }}>
+            {images.length}/{maxImages}
+            {isPro && ' ★'}
+          </span>
+        </div>
+
+        {/* サムネイル一覧（個別に削除できる） */}
+        {images.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '6px' }}>
+            {images.map((src, i) => (
+              <div key={i} style={{ position: 'relative' }}>
+                <img
+                  src={src}
+                  alt=""
+                  style={{
+                    width: '46px',
+                    height: '46px',
+                    objectFit: 'cover',
+                    borderRadius: '8px',
+                    display: 'block',
+                    border: '1px solid #E0E0E0',
+                  }}
+                />
+                <button
+                  onClick={() => onUpdateSettings({ bgImages: images.filter((_, j) => j !== i) })}
+                  aria-label={`remove image ${i + 1}`}
+                  style={{
+                    position: 'absolute',
+                    top: '-6px',
+                    right: '-6px',
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    border: 'none',
+                    backgroundColor: '#333',
+                    color: '#fff',
+                    fontSize: '11px',
+                    fontWeight: 900,
+                    lineHeight: 1,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    padding: 0,
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: '6px' }}>
           <button
-            style={{ ...rowBtn, flex: 1, textAlign: 'center' }}
+            style={{
+              ...rowBtn,
+              flex: 1,
+              textAlign: 'center',
+              opacity: canAddImage ? 1 : 0.4,
+              cursor: canAddImage ? 'pointer' : 'default',
+            }}
+            disabled={!canAddImage}
             onClick={() => fileRef.current?.click()}
           >
-            SET
+            {isPro && images.length > 0 ? 'ADD' : 'SET'}
           </button>
           <button
             style={{
               ...rowBtn,
               flex: 1,
               textAlign: 'center',
-              opacity: settings.bgImage ? 1 : 0.4,
+              opacity: images.length > 0 ? 1 : 0.4,
             }}
-            disabled={!settings.bgImage}
-            onClick={() => onUpdateSettings({ bgImage: null })}
+            disabled={images.length === 0}
+            onClick={() => onUpdateSettings({ bgImages: [] })}
           >
             CLEAR
           </button>
         </div>
+        {!isPro && (
+          <div style={{ fontSize: '10px', fontWeight: 700, color: '#bbb', marginTop: '4px' }}>
+            ★ PRO: UP TO {MAX_BG_IMAGES_PRO} IMAGES, RANDOM EACH ROUND
+          </div>
+        )}
+        {saveError && (
+          <div style={{ fontSize: '10px', fontWeight: 800, color: '#E87070', marginTop: '4px' }}>
+            STORAGE FULL — NOT SAVED
+          </div>
+        )}
         <input
           ref={fileRef}
           type="file"
@@ -256,19 +415,41 @@ export function Menu({
               ⛶ FULL SCREEN
             </button>
           )}
-          <button style={rowBtn} onClick={onShowRank}>
+          <button style={rowBtn} onClick={() => closeThen(onShowRank)}>
             🏆 RANK
           </button>
           <button style={{ ...rowBtn, color: '#aaa', cursor: 'default' }} disabled>
             👤 LOGIN (SOON)
           </button>
-          <button style={rowBtn} onClick={onShowDebug}>
+          <button style={rowBtn} onClick={() => closeThen(onShowDebug)}>
             🔊 SOUND CHECK
+          </button>
+          <button style={rowBtn} onClick={() => closeThen(onShowContact)}>
+            ✉️ FEEDBACK / CONTACT
           </button>
         </div>
 
+        {/* 開発用：有料機能の確認のためプランを切り替える（本番ビルドには出ない） */}
+        {DEV_PLAN_TOGGLE && (
+          <>
+            <div style={sectionLabel}>DEV</div>
+            <button
+              onClick={togglePro}
+              style={{
+                ...rowBtn,
+                textAlign: 'center',
+                backgroundColor: isPro ? '#F0A500' : '#fff',
+                color: isPro ? '#fff' : '#333',
+                borderColor: isPro ? '#F0A500' : '#E0E0E0',
+              }}
+            >
+              {isPro ? '★ PRO' : 'FREE'}
+            </button>
+          </>
+        )}
+
         <div style={{ marginTop: 'auto', paddingTop: '16px', fontSize: '11px', color: '#bbb', fontWeight: 700 }}>
-          Po v0.2
+          Po v0.2{isPro ? ' · PRO' : ''}
         </div>
       </div>
     </div>
