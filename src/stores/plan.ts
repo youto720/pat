@@ -6,8 +6,9 @@ import { useCallback, useSyncExternalStore } from 'react';
 
 const KEY = 'po_plan_pro';
 
-// 開発ビルドでのみ切り替えボタンを出す（本番には出さない）
-export const DEV_PLAN_TOGGLE = import.meta.env.DEV;
+// 有料機能の検証用トグル。デプロイ先でも動作確認したいので本番ビルドでも出す。
+// 課金/ログインと接続したら false にして、このトグルを取り除くこと。
+export const DEV_PLAN_TOGGLE = true;
 
 function read(): boolean {
   try {

@@ -15,7 +15,7 @@ export function computeConfig(goalCount: number): GridConfig {
   // スマホは 8x8 上限、タブレット以上（768px〜）は 12x12 まで
   const isTablet = typeof window !== 'undefined' && window.innerWidth >= 768;
   const max = isTablet ? 12 : 8;
-  const bonus = Math.floor(goalCount / 2);
+  const bonus = Math.floor(goalCount / 5);
   return {
     cols: Math.min(INITIAL_CONFIG.cols + bonus, max),
     rows: Math.min(INITIAL_CONFIG.rows + bonus, max),
@@ -181,7 +181,7 @@ export function useGameLogic() {
           goalCount: prev.goalCount + 1,
           isTracing: true, // 指は離さないのでトレース継続
           roundId: prev.roundId + 1,
-          soundEvent: soundOf(prev, 'goal'),
+          soundEvent: soundOf(prev, 'complete', path.length - 1),
         };
       }
 
@@ -205,7 +205,11 @@ export function useGameLogic() {
           isTracing: false,
           isGoal: true,
           isPerfect,
-          soundEvent: soundOf(prev, isPerfect ? 'perfect' : 'goal'),
+          soundEvent: isPerfect
+            ? soundOf(prev, 'perfect')
+            : effMode === 'fill'
+            ? soundOf(prev, 'complete', path.length - 1)
+            : soundOf(prev, 'goal'),
         };
       }
 

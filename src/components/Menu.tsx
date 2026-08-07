@@ -98,13 +98,19 @@ export function Menu({
   const maxImages = isPro ? MAX_BG_IMAGES_PRO : MAX_BG_IMAGES_FREE;
   const canAddImage = images.length < maxImages || !isPro;
 
-  const onPickImage = async (file: File | null) => {
-    if (!file) return;
+  // PRO は一度に複数枚選べる（上限まで取り込む）。無料は1枚だけ差し替え
+  const onPickImages = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
     try {
-      const dataUrl = await imageFileToDataUrl(file);
-      onUpdateSettings({
-        bgImages: isPro ? [...images, dataUrl].slice(0, MAX_BG_IMAGES_PRO) : [dataUrl],
-      });
+      if (!isPro) {
+        onUpdateSettings({ bgImages: [await imageFileToDataUrl(files[0])] });
+        return;
+      }
+      const room = MAX_BG_IMAGES_PRO - images.length;
+      if (room <= 0) return;
+      const picked = Array.from(files).slice(0, room);
+      const urls = await Promise.all(picked.map(f => imageFileToDataUrl(f)));
+      onUpdateSettings({ bgImages: [...images, ...urls].slice(0, MAX_BG_IMAGES_PRO) });
     } catch {
       // 読めない画像は無視
     }
@@ -400,9 +406,10 @@ export function Menu({
           ref={fileRef}
           type="file"
           accept="image/*"
+          multiple={isPro}
           style={{ display: 'none' }}
           onChange={e => {
-            void onPickImage(e.target.files?.[0] ?? null);
+            void onPickImages(e.target.files);
             e.target.value = '';
           }}
         />
@@ -449,7 +456,7 @@ export function Menu({
         )}
 
         <div style={{ marginTop: 'auto', paddingTop: '16px', fontSize: '11px', color: '#bbb', fontWeight: 700 }}>
-          Po v0.2{isPro ? ' · PRO' : ''}
+          Po v0.3{isPro ? ' · PRO' : ''}
         </div>
       </div>
     </div>

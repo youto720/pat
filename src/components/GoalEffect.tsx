@@ -58,7 +58,7 @@ function makeSparkles(count: number): Sparkle[] {
       id: i,
       x: `${Math.cos(angle) * dist}px`,
       y: `${Math.sin(angle) * dist * 0.7}px`,
-      size: 16 + Math.random() * 18,
+      size: 8 + Math.random() * 9,
       color: SPARKLE_COLORS[i % SPARKLE_COLORS.length],
       duration: 1 + Math.random() * 0.5,
       delay: Math.random() * 0.7,
@@ -217,7 +217,7 @@ export function GoalEffect({ score, willGrow, perfect, fillRule }: Props) {
         <div
           style={{
             fontFamily: 'Nunito, sans-serif',
-            fontSize: perfect ? 'clamp(34px, 10vw, 60px)' : 'clamp(40px, 12vw, 72px)',
+            fontSize: perfect ? 'clamp(27px, 8vw, 48px)' : 'clamp(32px, 9.6vw, 58px)',
             fontWeight: 900,
             color: perfect ? '#F0A500' : '#E87070',
             lineHeight: 1,
@@ -238,7 +238,7 @@ export function GoalEffect({ score, willGrow, perfect, fillRule }: Props) {
         {willGrow && (
           <div
             style={{
-              fontSize: 'clamp(13px, 3.5vw, 18px)',
+              fontSize: 'clamp(26px, 7vw, 36px)',
               fontWeight: 700,
               color: '#E87070',
               marginTop: '4px',

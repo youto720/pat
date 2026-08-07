@@ -25,7 +25,14 @@ export type TimeVariant = 'fill' | 'goal' | 'endless';
 
 // ゲームロジックが発行する効果音イベント。
 // 状態が実際に変化した時だけ id が増え、表示側は id の変化で1回だけ再生する
-export type SoundKind = 'step' | 'bonus' | 'goal' | 'perfect' | 'fail' | 'reset';
+export type SoundKind =
+  | 'step'
+  | 'bonus'
+  | 'complete' // FILL / ENDLESS のクリア（なぞり音の続きで少し高い音）
+  | 'goal'
+  | 'perfect'
+  | 'fail'
+  | 'reset';
 
 export interface SoundEvent {
   id: number;

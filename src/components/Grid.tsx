@@ -82,6 +82,7 @@ export function Grid({ game, sound, palette, bgImage, disabled = false }: Props)
     switch (ev.kind) {
       case 'step': sound.playStep(ev.step ?? 0); break;
       case 'bonus': sound.playBonus(); break;
+      case 'complete': sound.playComplete(ev.step ?? 0); break;
       case 'goal': sound.playGoal(); break;
       case 'perfect': sound.playPerfect(); break;
       case 'fail': sound.playFail(); break;

@@ -90,37 +90,59 @@ function playWeb(fn: (ac: AudioContext) => void) {
   }
 }
 
+// なぞるたびに上がっていく音階。step が進むほど高くなる
+function stepFreq(step: number): number {
+  // 低めの音から始めて、8x8=64 マスでも頭打ちしないよう高音域まで伸ばす
+  return Math.min(260 * Math.pow(1.05, step), 3000);
+}
+
+// なぞり音（短い「ポン」）
+function playTone(ac: AudioContext, freq: number) {
+  const osc = ac.createOscillator();
+  const gain = ac.createGain();
+  osc.connect(gain); gain.connect(ac.destination);
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.22, ac.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.12);
+  osc.start(ac.currentTime); osc.stop(ac.currentTime + 0.12);
+}
+
+// クリア時の「ポポポン」。base を変えると同じ響きのまま音程だけ移調できる。
+// GOAL も Complete もこれを使うので、音色・音量・テンポは常に同じ
+const FANFARE = [523.25, 659.25, 783.99];
+const FANFARE_BASE = FANFARE[0];
+
+function playFanfare(ac: AudioContext, base: number) {
+  const ratio = base / FANFARE_BASE;
+  FANFARE.forEach((freq, i) => {
+    const t = ac.currentTime + i * 0.12;
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.connect(gain); gain.connect(ac.destination);
+    osc.type = 'triangle';
+    osc.frequency.value = freq * ratio;
+    gain.gain.setValueAtTime(0.35, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+    osc.start(t); osc.stop(t + 0.25);
+  });
+}
+
 export function useSound() {
   function playStep(step: number) {
-    playWeb(ac => {
-      // 低めの音から始めて、8x8=64 マスでも頭打ちしないよう高音域まで伸ばす
-      const freq = Math.min(260 * Math.pow(1.05, step), 3000);
-      const osc = ac.createOscillator();
-      const gain = ac.createGain();
-      osc.connect(gain); gain.connect(ac.destination);
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.22, ac.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.12);
-      osc.start(ac.currentTime); osc.stop(ac.currentTime + 0.12);
-    });
+    playWeb(ac => playTone(ac, stepFreq(step)));
+  }
+
+  // Complete：GOAL と同じファンファーレを、最後のマスより少しだけ高い音程で鳴らす
+  function playComplete(lastStep: number) {
+    // 直前のなぞり音より 4 段ぶん高い（stepFreq の 1 段 = 約 1.05 倍）。
+    // 大きい盤面で耳に痛くならないよう上限を設ける
+    const base = Math.min(stepFreq(lastStep + 3), 1200);
+    playWeb(ac => playFanfare(ac, base));
   }
 
   function playGoal() {
-    playWeb(ac => {
-      // 1.5倍速のファンファーレ
-      [523.25, 659.25, 783.99].forEach((freq, i) => {
-        const t = ac.currentTime + i * 0.12;
-        const osc = ac.createOscillator();
-        const gain = ac.createGain();
-        osc.connect(gain); gain.connect(ac.destination);
-        osc.type = 'triangle';
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.35, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-        osc.start(t); osc.stop(t + 0.25);
-      });
-    });
+    playWeb(ac => playFanfare(ac, FANFARE_BASE));
   }
 
   function playReset() {
@@ -205,5 +227,5 @@ export function useSound() {
     });
   }
 
-  return { playStep, playGoal, playPerfect, playReset, playBonus, playFail, unlockAudio };
+  return { playStep, playComplete, playGoal, playPerfect, playReset, playBonus, playFail, unlockAudio };
 }
