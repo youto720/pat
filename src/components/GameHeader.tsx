@@ -79,7 +79,21 @@ export function GameHeader({ totalScore, roundScore, timeLeftMs, onMenu }: Props
             ⏱ {fmt(timeLeftMs)}
           </span>
         ) : (
-          <Logo height={28} />
+          // ロゴをタップするとリロードしてスタート画面に戻る
+          <button
+            onClick={() => window.location.reload()}
+            aria-label="reload"
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              display: 'block',
+              lineHeight: 0,
+            }}
+          >
+            <Logo height={28} />
+          </button>
         )}
       </div>
 

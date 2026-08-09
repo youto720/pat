@@ -7,6 +7,7 @@ import { StartGate } from './components/StartGate';
 import { Menu } from './components/Menu';
 import { Ranking } from './components/Ranking';
 import { ContactForm } from './components/ContactForm';
+import { HowToPlay } from './components/HowToPlay';
 import { TimeAttackStart, TimeAttackResult } from './components/TimeAttack';
 import type { TaRule } from './components/TimeAttack';
 import { AdBanner, AdInterstitial } from './components/Ad';
@@ -28,6 +29,7 @@ export default function App() {
   const [showDebug, setShowDebug] = useState(false);
   const [showRank, setShowRank] = useState(false);
   const [showContact, setShowContact] = useState(false);
+  const [showHowTo, setShowHowTo] = useState(false);
   const [showAd, setShowAd] = useState(false);
   const [randomPal, setRandomPal] = useState<Palette>(() => randomPalette());
 
@@ -221,6 +223,10 @@ export default function App() {
             setShowContact(true);
             setMenuOpen(false);
           }}
+          onShowHowTo={() => {
+            setShowHowTo(true);
+            setMenuOpen(false);
+          }}
           onClose={() => setMenuOpen(false)}
           saveError={saveError}
         />
@@ -229,6 +235,8 @@ export default function App() {
       {showRank && <Ranking onClose={() => setShowRank(false)} />}
 
       {showContact && <ContactForm onClose={() => setShowContact(false)} />}
+
+      {showHowTo && <HowToPlay onClose={() => setShowHowTo(false)} />}
 
       {showAd && <AdInterstitial onClose={() => setShowAd(false)} />}
 

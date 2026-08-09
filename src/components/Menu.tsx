@@ -18,6 +18,7 @@ interface Props {
   onShowRank: () => void;
   onShowDebug: () => void;
   onShowContact: () => void;
+  onShowHowTo: () => void;
   onClose: () => void;
   saveError: boolean;
 }
@@ -65,6 +66,7 @@ export function Menu({
   onShowRank,
   onShowDebug,
   onShowContact,
+  onShowHowTo,
   onClose,
   saveError,
 }: Props) {
@@ -428,11 +430,14 @@ export function Menu({
           <button style={{ ...rowBtn, color: '#aaa', cursor: 'default' }} disabled>
             👤 LOGIN (SOON)
           </button>
-          <button style={rowBtn} onClick={() => closeThen(onShowDebug)}>
-            🔊 SOUND CHECK
+          <button style={rowBtn} onClick={() => closeThen(onShowHowTo)}>
+            ❓ HOW TO PLAY
           </button>
           <button style={rowBtn} onClick={() => closeThen(onShowContact)}>
             ✉️ FEEDBACK / CONTACT
+          </button>
+          <button style={rowBtn} onClick={() => closeThen(onShowDebug)}>
+            🔊 SOUND CHECK
           </button>
         </div>
 
