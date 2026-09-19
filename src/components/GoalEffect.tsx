@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ACCENT_COLOR } from '../stores/settings';
 
 interface Props {
   score: number;
@@ -219,7 +220,7 @@ export function GoalEffect({ score, willGrow, perfect, fillRule }: Props) {
             fontFamily: 'Nunito, sans-serif',
             fontSize: perfect ? 'clamp(27px, 8vw, 48px)' : 'clamp(32px, 9.6vw, 58px)',
             fontWeight: 900,
-            color: perfect ? '#F0A500' : '#E87070',
+            color: ACCENT_COLOR,
             lineHeight: 1,
             whiteSpace: 'nowrap',
           }}
@@ -230,7 +231,7 @@ export function GoalEffect({ score, willGrow, perfect, fillRule }: Props) {
           style={{
             fontSize: 'clamp(18px, 5vw, 28px)',
             fontWeight: 800,
-            color: '#F4845F',
+            color: ACCENT_COLOR,
           }}
         >
           +{score}
@@ -240,7 +241,7 @@ export function GoalEffect({ score, willGrow, perfect, fillRule }: Props) {
             style={{
               fontSize: 'clamp(26px, 7vw, 36px)',
               fontWeight: 700,
-              color: '#E87070',
+              color: ACCENT_COLOR,
               marginTop: '4px',
             }}
           >

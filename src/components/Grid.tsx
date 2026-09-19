@@ -5,6 +5,7 @@ import type { useSound } from '../hooks/useSound';
 import { isBlinkOn } from '../utils/blink';
 import { AD_BANNER_HEIGHT } from './Ad';
 import { useIsPro } from '../stores/plan';
+import { MAIN_COLOR } from '../stores/settings';
 
 type GameLogic = ReturnType<typeof useGameLogic>;
 type SoundAPI = ReturnType<typeof useSound>;
@@ -14,7 +15,11 @@ interface Props {
   sound: SoundAPI;
   palette: Palette;
   bgImage: string | null;
+  /** 全マス埋めクリア時に、隙間を消して背景画像を1枚絵として見せる */
+  revealImage?: boolean;
   disabled?: boolean;
+  /** グリッド右下のマス数ランダム切替（FILL / GOAL のときだけ渡す） */
+  sizeToggle?: { on: boolean; onToggle: () => void };
 }
 
 function cellSymbol(cell: Cell): string {
@@ -25,7 +30,15 @@ function cellSymbol(cell: Cell): string {
   return '';
 }
 
-export function Grid({ game, sound, palette, bgImage, disabled = false }: Props) {
+export function Grid({
+  game,
+  sound,
+  palette,
+  bgImage,
+  revealImage = false,
+  disabled = false,
+  sizeToggle,
+}: Props) {
   const gridRef = useRef<HTMLDivElement>(null);
   const isMouseDownRef = useRef(false);
   const isPro = useIsPro();
@@ -82,7 +95,7 @@ export function Grid({ game, sound, palette, bgImage, disabled = false }: Props)
     switch (ev.kind) {
       case 'step': sound.playStep(ev.step ?? 0); break;
       case 'bonus': sound.playBonus(); break;
-      case 'complete': sound.playComplete(ev.step ?? 0); break;
+      case 'complete': sound.playComplete(); break;
       case 'goal': sound.playGoal(); break;
       case 'perfect': sound.playPerfect(); break;
       case 'fail': sound.playFail(); break;
@@ -181,7 +194,8 @@ export function Grid({ game, sound, palette, bgImage, disabled = false }: Props)
   }, [bgImage]);
 
   const { cols, rows } = game.config;
-  const gapPx = 4;
+  // 全マス埋めクリア時は隙間を 0 にして 1 枚絵に見せる（CSS transition で滑らかに）
+  const gapPx = revealImage ? 0 : 4;
 
   // グリッドの実サイズ（マスごとの画像切り出し位置の計算に使う）。
   // ResizeObserver はタブ非表示だと発火しないので、サイズが変わる契機
@@ -246,6 +260,7 @@ export function Grid({ game, sound, palette, bgImage, disabled = false }: Props)
   return (
     <div
       style={{
+        position: 'relative',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -253,6 +268,36 @@ export function Grid({ game, sound, palette, bgImage, disabled = false }: Props)
         padding: '12px',
       }}
     >
+      {/* マス数ランダムの切替（グリッド右下） */}
+      {sizeToggle && (
+        <button
+          onClick={sizeToggle.onToggle}
+          aria-label="random size"
+          aria-pressed={sizeToggle.on}
+          style={{
+            position: 'absolute',
+            right: '12px',
+            bottom: '8px',
+            zIndex: 6,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '5px 10px',
+            fontSize: '11px',
+            fontWeight: 900,
+            letterSpacing: '0.5px',
+            fontFamily: 'inherit',
+            border: '2px solid',
+            borderColor: sizeToggle.on ? MAIN_COLOR : 'rgba(0,0,0,0.15)',
+            borderRadius: '999px',
+            backgroundColor: sizeToggle.on ? MAIN_COLOR : 'rgba(255,255,255,0.85)',
+            color: sizeToggle.on ? '#fff' : '#666',
+            cursor: 'pointer',
+          }}
+        >
+          🎲 SIZE {sizeToggle.on ? 'RANDOM' : 'AUTO'}
+        </button>
+      )}
       <div
         style={{
           // 枠は視覚的に非表示（gridFlash 演出のため要素自体は残す）
@@ -265,11 +310,14 @@ export function Grid({ game, sound, palette, bgImage, disabled = false }: Props)
       >
         <div
           ref={gridRef}
+          className={revealImage ? 'gridReveal' : undefined}
           style={{
+            position: 'relative',
             display: 'grid',
             gridTemplateColumns: `repeat(${cols}, 1fr)`,
             gridTemplateRows: `repeat(${rows}, 1fr)`,
             gap: `${gapPx}px`,
+            transition: 'gap 0.8s ease',
             width: `min(calc(100vw - 40px), calc((100dvh - ${
               104 + (isPro ? 0 : AD_BANNER_HEIGHT)
             }px) * ${cols / rows}))`,

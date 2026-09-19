@@ -175,6 +175,15 @@ body {
   to { transform: translateX(calc(-1 * var(--drawer-w))); opacity: 0; }
 }
 
+/* 全マス埋めクリア時：角丸と裏面の切り出し位置も隙間に合わせて滑らかに動かす */
+.cellBack {
+  transition: background-position 0.8s ease, border-radius 0.8s ease;
+}
+
+.gridReveal .cellFace {
+  border-radius: 0;
+}
+
 @keyframes resetFade {
   0% { opacity: 0.6; }
   100% { opacity: 1; }

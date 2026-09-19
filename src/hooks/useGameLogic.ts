@@ -4,22 +4,35 @@ import { generateGrid } from '../utils/gridGenerator';
 import { isBlinkOn } from '../utils/blink';
 
 const INITIAL_CONFIG: GridConfig = { cols: 4, rows: 4 };
-const ENDLESS_CONFIG: GridConfig = { cols: 6, rows: 6 };
+export const ENDLESS_DEFAULT_SIZE = 6;
+export const ENDLESS_SIZES = [4, 5, 6, 7, 8];
 
 const CELL_PT = 10;
 const BONUS_PT = 50;
 const CLEAR_PT = 100;
 const PERFECT_PT = 300; // goal/time モードで全マス埋めてクリアした時の追加ボーナス
 
-export function computeConfig(goalCount: number): GridConfig {
-  // スマホは 8x8 上限、タブレット以上（768px〜）は 12x12 まで
+// スマホは 8x8 上限、タブレット以上（768px〜）は 12x12 まで
+function maxSize(): number {
   const isTablet = typeof window !== 'undefined' && window.innerWidth >= 768;
-  const max = isTablet ? 12 : 8;
-  const bonus = Math.floor(goalCount / 5);
-  return {
-    cols: Math.min(INITIAL_CONFIG.cols + bonus, max),
-    rows: Math.min(INITIAL_CONFIG.rows + bonus, max),
-  };
+  return isTablet ? 12 : 8;
+}
+
+// マス数ランダム時：4x4〜上限の中から毎ラウンド引く
+function randomConfig(): GridConfig {
+  const size = 4 + Math.floor(Math.random() * (maxSize() - 4 + 1));
+  return { cols: size, rows: size };
+}
+
+export function computeConfig(goalCount: number): GridConfig {
+  const max = maxSize();
+  // 4x4 は 3 回、5x5 は 4 回、6x6 以降は 5 回クリアするごとに 1 段階拡大
+  let size: number;
+  if (goalCount < 3) size = 4;
+  else if (goalCount < 7) size = 5;
+  else size = 6 + Math.floor((goalCount - 7) / 5);
+  size = Math.min(size, max);
+  return { cols: size, rows: size };
 }
 
 // time モードは timeVariant（fill / goal / endless）のルールで遊ぶ
@@ -53,10 +66,24 @@ function soundOf(prev: GameState, kind: SoundKind, step?: number) {
   return { id: (prev.soundEvent?.id ?? 0) + 1, kind, step };
 }
 
-function makeInitialState(mode: GameMode, timeVariant: TimeVariant): GameState {
-  // ENDLESS は途中で拡大できない（指を離さず続けるため）ので最初から 6x6
+// マス数ランダムは FILL / GOAL の通常モードだけに効く（TIME・ENDLESS は対象外）
+function usesRandomSize(mode: GameMode, randomSize: boolean): boolean {
+  return randomSize && (mode === 'fill' || mode === 'goal');
+}
+
+function makeInitialState(
+  mode: GameMode,
+  timeVariant: TimeVariant,
+  randomSize: boolean,
+  endlessSize: number
+): GameState {
+  // ENDLESS は途中で拡大できない（指を離さず続けるため）ので最初からそのサイズで固定
   const config =
-    effectiveMode(mode, timeVariant) === 'endless' ? ENDLESS_CONFIG : INITIAL_CONFIG;
+    effectiveMode(mode, timeVariant) === 'endless'
+      ? { cols: endlessSize, rows: endlessSize }
+      : usesRandomSize(mode, randomSize)
+      ? randomConfig()
+      : INITIAL_CONFIG;
   const { cells, startPos, goalPos } = genFor(mode, timeVariant, config, 0);
   return {
     mode,
@@ -74,21 +101,32 @@ function makeInitialState(mode: GameMode, timeVariant: TimeVariant): GameState {
     isGoal: false,
     isPerfect: false,
     config,
+    randomSize,
     roundId: 0,
     soundEvent: null,
   };
 }
 
 export function useGameLogic() {
-  const [state, setState] = useState<GameState>(() => makeInitialState('fill', 'goal'));
+  const [state, setState] = useState<GameState>(() =>
+    makeInitialState('fill', 'goal', false, ENDLESS_DEFAULT_SIZE)
+  );
 
-  const newGame = useCallback((mode: GameMode, timeVariant: TimeVariant = 'goal') => {
-    setState(prev => ({
-      ...makeInitialState(mode, timeVariant),
-      roundId: prev.roundId + 1,
-      // id の単調増加を保つため直前のイベントを引き継ぐ（再生はされない）
-      soundEvent: prev.soundEvent,
-    }));
+  const newGame = useCallback(
+    (mode: GameMode, timeVariant: TimeVariant = 'goal', endlessSize = ENDLESS_DEFAULT_SIZE) => {
+      setState(prev => ({
+        ...makeInitialState(mode, timeVariant, prev.randomSize, endlessSize),
+        roundId: prev.roundId + 1,
+        // id の単調増加を保つため直前のイベントを引き継ぐ（再生はされない）
+        soundEvent: prev.soundEvent,
+      }));
+    },
+    []
+  );
+
+  // マス数ランダムの ON/OFF。次のラウンドから反映される
+  const setRandomSize = useCallback((randomSize: boolean) => {
+    setState(prev => (prev.randomSize === randomSize ? prev : { ...prev, randomSize }));
   }, []);
 
   const beginTrace = useCallback((row: number, col: number) => {
@@ -244,7 +282,9 @@ export function useGameLogic() {
 
   const nextRound = useCallback(() => {
     setState(prev => {
-      const config = computeConfig(prev.goalCount);
+      const config = usesRandomSize(prev.mode, prev.randomSize)
+        ? randomConfig()
+        : computeConfig(prev.goalCount);
       const { cells, startPos, goalPos } = genFor(prev.mode, prev.timeVariant, config, prev.goalCount);
       return {
         ...prev,
@@ -269,6 +309,7 @@ export function useGameLogic() {
     effectiveMode: effectiveMode(state.mode, state.timeVariant),
     roundScore: state.path.length * CELL_PT + state.bonusHits * BONUS_PT,
     newGame,
+    setRandomSize,
     beginTrace,
     extendTrace,
     resetTrace,

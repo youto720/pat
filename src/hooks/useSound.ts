@@ -112,6 +112,8 @@ function playTone(ac: AudioContext, freq: number) {
 // GOAL も Complete もこれを使うので、音色・音量・テンポは常に同じ
 const FANFARE = [523.25, 659.25, 783.99];
 const FANFARE_BASE = FANFARE[0];
+// Complete 用の基準音。なぞり音の最高域（stepFreq の上限付近）と揃えた高さ
+const COMPLETE_BASE = 1200;
 
 function playFanfare(ac: AudioContext, base: number) {
   const ratio = base / FANFARE_BASE;
@@ -133,11 +135,16 @@ export function useSound() {
     playWeb(ac => playTone(ac, stepFreq(step)));
   }
 
-  // Complete：GOAL と同じファンファーレを、最後のマスより少しだけ高い音程で鳴らす
-  function playComplete(lastStep: number) {
-    // 直前のなぞり音より 4 段ぶん高い（stepFreq の 1 段 = 約 1.05 倍）。
-    // 大きい盤面で耳に痛くならないよう上限を設ける
-    const base = Math.min(stepFreq(lastStep + 3), 1200);
+  // Complete：GOAL と同じファンファーレを一段高い音程で鳴らす。
+  // 盤面サイズによらず 6x6 のときの音（基準 1200Hz）に固定
+  function playComplete() {
+    playWeb(ac => playFanfare(ac, COMPLETE_BASE));
+  }
+
+  // SOUND CHECK 用：盤面サイズごとの旧仕様（最後のマスの3段上）で Complete を鳴らす。
+  // 6x6 以上は上限 1200Hz に当たるので現行の Complete と同じ音になる
+  function playCompleteForSize(size: number) {
+    const base = Math.min(stepFreq(size * size - 1 + 3), COMPLETE_BASE);
     playWeb(ac => playFanfare(ac, base));
   }
 
@@ -227,5 +234,8 @@ export function useSound() {
     });
   }
 
-  return { playStep, playComplete, playGoal, playPerfect, playReset, playBonus, playFail, unlockAudio };
+  return {
+    playStep, playComplete, playCompleteForSize, playGoal, playPerfect,
+    playReset, playBonus, playFail, unlockAudio,
+  };
 }

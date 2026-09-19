@@ -9,9 +9,10 @@ import { Ranking } from './components/Ranking';
 import { ContactForm } from './components/ContactForm';
 import { HowToPlay } from './components/HowToPlay';
 import { TimeAttackStart, TimeAttackResult } from './components/TimeAttack';
+import { EndlessStart } from './components/EndlessStart';
 import type { TaRule } from './components/TimeAttack';
 import { AdBanner, AdInterstitial } from './components/Ad';
-import { useGameLogic, computeConfig } from './hooks/useGameLogic';
+import { useGameLogic, computeConfig, ENDLESS_DEFAULT_SIZE } from './hooks/useGameLogic';
 import { useSound } from './hooks/useSound';
 import { useSettings } from './stores/settings';
 import { useIsPro } from './stores/plan';
@@ -32,6 +33,10 @@ export default function App() {
   const [showHowTo, setShowHowTo] = useState(false);
   const [showAd, setShowAd] = useState(false);
   const [randomPal, setRandomPal] = useState<Palette>(() => randomPalette());
+
+  // ENDLESS：開始前にマス数を選ぶ（変更は PRO 限定）
+  const [endlessSize, setEndlessSize] = useState(ENDLESS_DEFAULT_SIZE);
+  const [endlessStarted, setEndlessStarted] = useState(false);
 
   // タイムアタック（duration は秒単位）
   const [taDuration, setTaDuration] = useState(30);
@@ -75,6 +80,10 @@ export default function App() {
 
   // GOAL 演出が消えてから次ラウンドへ（グリッド拡大もこのタイミングで反映）
   // 10ステージクリアごとに全画面広告（タイムアタック中と PRO では出さない）
+  // 全マス埋めクリアで背景画像があるときは、隙間と角丸を 0 にして 1 枚絵で見せる。
+  // Complete! の文字（2s）が消えたあと、画像だけの状態を 2s キープしてから次へ
+  const revealImage =
+    game.isGoal && !!bgImage && game.path.length === game.config.rows * game.config.cols;
   useEffect(() => {
     if (!game.isGoal) return;
     const t = setTimeout(() => {
@@ -82,7 +91,7 @@ export default function App() {
       if (!isPro && game.goalCount > 0 && game.goalCount % 10 === 0 && taEndTs == null) {
         setShowAd(true);
       }
-    }, 2200);
+    }, revealImage ? 4000 : 2200);
     return () => clearTimeout(t);
   }, [game.isGoal, game.goalCount, isPro]);
 
@@ -116,8 +125,9 @@ export default function App() {
   const prevModeRef = useRef<GameMode>('fill');
 
   const changeMode = (mode: GameMode) => {
-    if (mode !== 'time') prevModeRef.current = mode;
-    game.newGame(mode, taMode);
+    if (mode !== 'time' && mode !== 'endless') prevModeRef.current = mode;
+    game.newGame(mode, taMode, endlessSize);
+    setEndlessStarted(false);
     setTaEndTs(null);
     setTaTimeLeft(null);
     setTaResult(null);
@@ -137,11 +147,24 @@ export default function App() {
     game.newGame('time', m);
   };
 
-  const taRunning = taEndTs != null;
-  const gridDisabled = game.mode === 'time' && !taRunning;
+  const startEndless = () => {
+    game.newGame('endless', taMode, endlessSize);
+    setEndlessStarted(true);
+  };
 
+  const taRunning = taEndTs != null;
+  const gridDisabled =
+    (game.mode === 'time' && !taRunning) || (game.mode === 'endless' && !endlessStarted);
+
+  // マス数ランダム設定をゲームロジックに反映（次ラウンドから効く）
+  useEffect(() => {
+    game.setRandomSize(settings.randomSize);
+  }, [settings.randomSize]);
+
+  const sizeIsRandom = settings.randomSize && (game.mode === 'fill' || game.mode === 'goal');
   const next = computeConfig(game.goalCount);
-  const willGrow = next.cols !== game.config.cols || next.rows !== game.config.rows;
+  const willGrow =
+    !sizeIsRandom && (next.cols !== game.config.cols || next.rows !== game.config.rows);
 
   // 背景画像は画面全体には出さない。グリッドのマスをめくると初めて見えるよう、
   // Grid 側でマスの裏面にだけ描画する
@@ -170,7 +193,13 @@ export default function App() {
         sound={sound}
         palette={palette}
         bgImage={bgImage}
+        revealImage={revealImage}
         disabled={gridDisabled}
+        sizeToggle={
+          game.mode === 'fill' || game.mode === 'goal'
+            ? { on: settings.randomSize, onToggle: () => update({ randomSize: !settings.randomSize }) }
+            : undefined
+        }
       />
 
       {/* 画面下の固定広告枠 */}
@@ -192,6 +221,18 @@ export default function App() {
           mode={taMode}
           onChangeMode={changeTaMode}
           onStart={startTimeAttack}
+          onCancel={() => changeMode(prevModeRef.current)}
+        />
+      )}
+
+      {started && game.mode === 'endless' && !endlessStarted && (
+        <EndlessStart
+          size={endlessSize}
+          onChangeSize={n => {
+            setEndlessSize(n);
+            game.newGame('endless', taMode, n); // 背後の盤面も選んだサイズに
+          }}
+          onStart={startEndless}
           onCancel={() => changeMode(prevModeRef.current)}
         />
       )}

@@ -110,6 +110,23 @@ export function DebugPanel({ sound, onClose }: Props) {
         </button>
       </div>
 
+      {/* Complete 音の比較：盤面サイズで基準音がどう変わっていたか（現行は 6x6 に統一） */}
+      <div style={{ fontSize: '12px', fontWeight: 700, margin: '4px 0 6px' }}>Complete 音（盤面サイズ別）</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+        {[4, 5, 6].map(size => (
+          <button
+            key={size}
+            style={btnStyle}
+            onClick={() => {
+              addLog(`▶ complete ${size}x${size}`);
+              sound.playCompleteForSize(size);
+            }}
+          >
+            {size}×{size}{size === 6 ? '（現行）' : ''}
+          </button>
+        ))}
+      </div>
+
       <div
         style={{
           backgroundColor: '#f5f5f5',

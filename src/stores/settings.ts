@@ -5,6 +5,7 @@ export interface Settings {
   cellColor: string;
   tapColor: string;
   randomColors: boolean;
+  randomSize: boolean; // FILL / GOAL でマス数をラウンドごとにランダムにする
   bgImages: string[]; // data URL の配列（PRO は複数枚もてる）
 }
 
@@ -17,16 +18,19 @@ export const MAX_BG_IMAGES_PRO = 8;
 // アプリのメインカラー。ボタンなどの UI アクセントはすべてここを参照する
 export const MAIN_COLOR = '#38a7d0';
 export const MAIN_COLOR_RGB = '56, 167, 208'; // 影などで rgba() を作る用
+// アクセントカラー（ロゴのオレンジ）。クリア時の文字・スコアなどに使う
+export const ACCENT_COLOR = '#d2541e';
 
 export const DEFAULT_COLORS = {
   bgColor: '#ffffff',
   cellColor: MAIN_COLOR,
-  tapColor: '#d2541e',
+  tapColor: ACCENT_COLOR,
 };
 
 const DEFAULTS: Settings = {
   ...DEFAULT_COLORS,
   randomColors: true,
+  randomSize: false,
   bgImages: [],
 };
 

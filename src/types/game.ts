@@ -56,6 +56,7 @@ export interface GameState {
   isGoal: boolean;
   isPerfect: boolean; // goal/time モードで全マス埋めてクリアした
   config: GridConfig;
+  randomSize: boolean; // FILL / GOAL でラウンドごとにマス数をランダムにする
   roundId: number;
   soundEvent: SoundEvent | null;
 }
