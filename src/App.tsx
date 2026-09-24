@@ -194,6 +194,7 @@ export default function App() {
         palette={palette}
         bgImage={bgImage}
         revealImage={revealImage}
+        icons={{ goal: settings.iconGoal, mine: settings.iconMine, bonus: settings.iconBonus }}
         disabled={gridDisabled}
         sizeToggle={
           game.mode === 'fill' || game.mode === 'goal'

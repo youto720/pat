@@ -1,6 +1,7 @@
 import { getUserName } from '../stores/ranking';
 import { MAIN_COLOR, MAIN_COLOR_RGB } from '../stores/settings';
 import { useIsPro } from '../stores/plan';
+import { useEffect, useState } from 'react';
 
 // ─── スタートパネル（TIME モードで未開始のとき） ───────────────────────
 // duration は秒単位
@@ -40,6 +41,18 @@ export function TimeAttackStart({
   onCancel,
 }: StartProps) {
   const isPro = useIsPro();
+
+  // 入力中は丸めない（"10" を打つ途中の "1" が下限 5 に化けるのを防ぐ）。確定は blur 時
+  const [durationText, setDurationText] = useState(String(duration));
+  useEffect(() => {
+    setDurationText(String(duration));
+  }, [duration]);
+  const commitDuration = () => {
+    const v = Math.round(Number(durationText));
+    const clamped = Number.isFinite(v) ? Math.min(TA_MAX_SEC, Math.max(TA_MIN_SEC, v)) : duration;
+    setDurationText(String(clamped));
+    onChangeDuration(clamped);
+  };
 
   return (
     <div
@@ -91,12 +104,16 @@ export function TimeAttackStart({
             inputMode="numeric"
             min={TA_MIN_SEC}
             max={TA_MAX_SEC}
-            value={duration}
+            value={durationText}
             onChange={e => {
-              const v = Number(e.target.value);
-              if (Number.isFinite(v)) {
-                onChangeDuration(Math.min(TA_MAX_SEC, Math.max(TA_MIN_SEC, Math.round(v))));
-              }
+              setDurationText(e.target.value);
+              const v = Math.round(Number(e.target.value));
+              // 範囲内の値だけ即反映（範囲外は blur で丸める）
+              if (Number.isFinite(v) && v >= TA_MIN_SEC && v <= TA_MAX_SEC) onChangeDuration(v);
+            }}
+            onBlur={commitDuration}
+            onKeyDown={e => {
+              if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
             }}
             style={{
               width: '84px',
@@ -112,6 +129,11 @@ export function TimeAttackStart({
             }}
           />
           <span style={{ fontSize: '13px', fontWeight: 800, color: '#999' }}>sec</span>
+        </div>
+      ) : null}
+      {isPro ? (
+        <div style={{ fontSize: '10px', fontWeight: 700, color: '#bbb', marginTop: '-14px', letterSpacing: '0.5px' }}>
+          {TA_MIN_SEC}~{TA_MAX_SEC}s
         </div>
       ) : (
         <div style={{ fontSize: '10px', fontWeight: 700, color: '#bbb', letterSpacing: '0.5px' }}>

@@ -7,6 +7,7 @@ import {
   MAIN_COLOR,
   MAX_BG_IMAGES_FREE,
   MAX_BG_IMAGES_PRO,
+  DEFAULT_ICONS,
 } from '../stores/settings';
 import { DEV_PLAN_TOGGLE, useIsPro, useTogglePro } from '../stores/plan';
 
@@ -118,6 +119,8 @@ export function Menu({
     }
   };
 
+  // カラー指定は PRO 限定（無料は RANDOM かデフォルト色）
+  const colorLocked = !isPro || settings.randomColors;
   const colorRow = (label: string, key: 'bgColor' | 'cellColor' | 'tapColor') => (
     <label
       style={{
@@ -127,14 +130,14 @@ export function Menu({
         padding: '6px 2px',
         fontSize: '13px',
         fontWeight: 700,
-        color: settings.randomColors ? '#bbb' : '#333',
+        color: colorLocked ? '#bbb' : '#333',
       }}
     >
       {label}
       <input
         type="color"
         value={settings[key]}
-        disabled={settings.randomColors}
+        disabled={colorLocked}
         onChange={e => onUpdateSettings({ [key]: e.target.value })}
         style={{
           width: '42px',
@@ -142,8 +145,55 @@ export function Menu({
           border: 'none',
           padding: 0,
           background: 'none',
-          cursor: settings.randomColors ? 'default' : 'pointer',
-          opacity: settings.randomColors ? 0.4 : 1,
+          cursor: colorLocked ? 'default' : 'pointer',
+          opacity: colorLocked ? 0.4 : 1,
+        }}
+      />
+    </label>
+  );
+
+  // 絵文字指定は PRO 限定。入力中は空にできるようにし、空のまま確定したら既定値に戻す
+  const [iconDraft, setIconDraft] = useState<Partial<Record<'iconGoal' | 'iconMine' | 'iconBonus', string>>>({});
+  const iconRow = (label: string, key: 'iconGoal' | 'iconMine' | 'iconBonus') => (
+    <label
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '6px 2px',
+        fontSize: '13px',
+        fontWeight: 700,
+        color: isPro ? '#333' : '#bbb',
+      }}
+    >
+      {label}
+      <input
+        type="text"
+        value={iconDraft[key] ?? settings[key]}
+        disabled={!isPro}
+        maxLength={4}
+        aria-label={`icon ${label}`}
+        onChange={e => {
+          const v = e.target.value;
+          setIconDraft(d => ({ ...d, [key]: v }));
+          if (v.trim() !== '') onUpdateSettings({ [key]: v.trim() });
+        }}
+        onBlur={() => {
+          if ((iconDraft[key] ?? '').trim() === '' && iconDraft[key] !== undefined) {
+            onUpdateSettings({ [key]: DEFAULT_ICONS[key] });
+          }
+          setIconDraft(d => ({ ...d, [key]: undefined }));
+        }}
+        style={{
+          width: '46px',
+          height: '32px',
+          textAlign: 'center',
+          fontSize: '18px',
+          border: '2px solid #E0E0E0',
+          borderRadius: '8px',
+          fontFamily: 'inherit',
+          opacity: isPro ? 1 : 0.4,
+          backgroundColor: '#fff',
         }}
       />
     </label>
@@ -250,7 +300,9 @@ export function Menu({
           COLOR
           <button
             onClick={() => onUpdateSettings({ ...DEFAULT_COLORS })}
+            disabled={!isPro}
             style={{
+              opacity: isPro ? 1 : 0.4,
               border: '1.5px solid #E0E0E0',
               borderRadius: '6px',
               backgroundColor: '#fff',
@@ -269,6 +321,11 @@ export function Menu({
         {colorRow('BG', 'bgColor')}
         {colorRow('CELL', 'cellColor')}
         {colorRow('TAP', 'tapColor')}
+        {!isPro && (
+          <div style={{ fontSize: '10px', fontWeight: 700, color: '#bbb', marginTop: '2px' }}>
+            ★ PRO: CUSTOM COLORS
+          </div>
+        )}
         {/* ランダムカラー：トグルスイッチ */}
         <div
           style={{
@@ -312,6 +369,38 @@ export function Menu({
             />
           </button>
         </div>
+
+        {/* GOAL モードの絵文字（PRO 限定） */}
+        <div style={{ ...sectionLabel, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          ICONS
+          <button
+            onClick={() => onUpdateSettings({ ...DEFAULT_ICONS })}
+            disabled={!isPro}
+            style={{
+              opacity: isPro ? 1 : 0.4,
+              border: '1.5px solid #E0E0E0',
+              borderRadius: '6px',
+              backgroundColor: '#fff',
+              color: '#999',
+              fontSize: '10px',
+              fontWeight: 800,
+              padding: '3px 8px',
+              cursor: isPro ? 'pointer' : 'default',
+              fontFamily: 'inherit',
+              letterSpacing: '0.5px',
+            }}
+          >
+            RESET
+          </button>
+        </div>
+        {iconRow('GOAL', 'iconGoal')}
+        {iconRow('MINE', 'iconMine')}
+        {iconRow('BONUS', 'iconBonus')}
+        {!isPro && (
+          <div style={{ fontSize: '10px', fontWeight: 700, color: '#bbb', marginTop: '2px' }}>
+            ★ PRO: CUSTOM ICONS
+          </div>
+        )}
 
         {/* 背景画像（PRO は複数枚 → ラウンドごとにランダム表示） */}
         <div style={{ ...sectionLabel, display: 'flex', justifyContent: 'space-between' }}>
@@ -461,7 +550,7 @@ export function Menu({
         )}
 
         <div style={{ marginTop: 'auto', paddingTop: '16px', fontSize: '11px', color: '#bbb', fontWeight: 700 }}>
-          Po v0.3{isPro ? ' · PRO' : ''}
+          Po v0.4{isPro ? ' · PRO' : ''}
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { MAIN_COLOR } from '../stores/settings';
+import { MAIN_COLOR, ACCENT_COLOR } from '../stores/settings';
 
 interface Props {
   onClose: () => void;
@@ -12,10 +12,17 @@ const h2: React.CSSProperties = {
   fontSize: '17px',
   fontWeight: 900,
   color: '#333',
-  margin: '22px 0 6px',
+  margin: '22px 0 2px',
   display: 'flex',
   alignItems: 'center',
   gap: '8px',
+};
+
+const lead: React.CSSProperties = {
+  fontSize: '13px',
+  fontWeight: 800,
+  color: ACCENT_COLOR,
+  margin: '0 0 6px',
 };
 
 const p: React.CSSProperties = {
@@ -26,11 +33,18 @@ const p: React.CSSProperties = {
   margin: '0 0 6px',
 };
 
+const badgeColor: Record<string, string> = {
+  FILL: MAIN_COLOR,
+  GOAL: ACCENT_COLOR,
+  TIME: '#666',
+  ENDLESS: '#8a5cc7',
+};
+
 const badge = (label: string): React.CSSProperties => ({
   display: 'inline-block',
   padding: '2px 10px',
   borderRadius: '6px',
-  backgroundColor: label === 'FILL' ? MAIN_COLOR : label === 'GOAL' ? '#d2541e' : '#666',
+  backgroundColor: badgeColor[label] ?? '#666',
   color: '#fff',
   fontSize: '12px',
   fontWeight: 900,
@@ -38,9 +52,7 @@ const badge = (label: string): React.CSSProperties => ({
 });
 
 function Bullet({ children }: { children: React.ReactNode }) {
-  return (
-    <li style={{ ...p, marginBottom: '4px' }}>{children}</li>
-  );
+  return <li style={{ ...p, marginBottom: '4px' }}>{children}</li>;
 }
 
 export function HowToPlay({ onClose }: Props) {
@@ -126,53 +138,77 @@ export function HowToPlay({ onClose }: Props) {
           )}
 
           <p style={{ ...p, marginTop: '16px' }}>
-            『Po』は、画面上のブロックを指先でなぞって遊ぶ、シンプルで爽快なパズルゲームです。
-            プレイヤーのスタイルに合わせて、3つのゲームモードでお楽しみいただけます。
+            『Po（ポ）』は、画面上のブロックをポポポポポ…と指先でなぞって遊ぶシンプルなパズルゲームです。
+            スタイルに合わせて、4つのゲームモードでお楽しみいただけます。
           </p>
 
           <h3 style={h2}>
             <span style={badge('FILL')}>FILL</span>
-            全てを塗りつぶす達成感
           </h3>
+          <p style={lead}>すべてを塗りつぶそう！</p>
           <ul style={{ paddingLeft: '20px', margin: 0 }}>
-            <Bullet>画面内のすべてのブロックを塗りつぶすモードです。</Bullet>
+            <Bullet>画面内のすべてのブロックを一筆書きで塗りつぶすモードです。</Bullet>
             <Bullet>
-              色の異なる「スタートブロック」から指を離さずに、一筆書きの要領で順番にブロックをなぞり、
-              全体のブロックをきれいに塗りつぶしましょう。
+              色の異なる「スタートブロック」から指を離さずに一筆書きの要領でブロックをなぞります。
             </Bullet>
+            <Bullet>ブロック全体をきれいに塗りつぶそう！</Bullet>
           </ul>
 
           <h3 style={h2}>
             <span style={badge('GOAL')}>GOAL</span>
-            スコアを競う戦略性
           </h3>
+          <p style={lead}>スコアを競おう！</p>
           <ul style={{ paddingLeft: '20px', margin: 0 }}>
             <Bullet>障害物を避けながら、高得点でのゴールを目指すモードです。</Bullet>
             <Bullet>
-              色の異なる「スタートブロック」から、ゴールである「赤い旗 🚩」を目指してブロックをなぞり進めます。
+              色の異なる「スタートブロック」から、ゴールである「赤いフラッグ」を目指してブロックをなぞり進めます。
             </Bullet>
-            <Bullet>すべてのブロックを塗りつぶす必要はありません。最善のルートを見つけましょう。</Bullet>
             <Bullet>
-              道中には「爆弾 💣」の障害物が設置されていますが、「★（星）」のブロックをなぞることで爆弾を消去できます。
+              道中には「爆弾」の障害物が設置されていますが、「★（星）」のブロックをなぞることで爆弾を消去できます。
             </Bullet>
+            <Bullet>すべてのブロックを塗りつぶす必要はありません。最善のルートを見つけよう！</Bullet>
           </ul>
 
           <h3 style={h2}>
             <span style={badge('TIME')}>TIME</span>
-            限界に挑むタイムアタック
           </h3>
+          <p style={lead}>タイムアタック！</p>
           <ul style={{ paddingLeft: '20px', margin: 0 }}>
-            <Bullet>制限時間内での最高スコアを目指す、ハラハラドキドキのモードです。</Bullet>
+            <Bullet>制限時間内での最高スコアを目指すハラハラドキドキのモードです。</Bullet>
             <Bullet>
-              「FILL」または「GOAL」のルールを選択し、決められた制限時間の中でどこまで高得点を獲得できるかに挑戦します。
+              「FILL」または「GOAL」のルールを選択し、決められた制限時間の中でどこまで高得点を獲得できるか挑戦しよう！
             </Bullet>
           </ul>
 
-          <h3 style={h2}>🎨 カスタマイズ</h3>
-          <p style={p}>メニュー画面からは、ゲーム画面をあなた好みにアレンジできます。</p>
+          <h3 style={h2}>
+            <span style={badge('ENDLESS')}>ENDLESS</span>
+          </h3>
+          <p style={lead}>限界に挑もう！</p>
           <ul style={{ paddingLeft: '20px', margin: 0 }}>
-            <Bullet>ブロックの色を自由にお好みのカラーへ変更できます。</Bullet>
-            <Bullet>ブロックの背景にお気に入りの画像を設定して楽しめます。</Bullet>
+            <Bullet>「FILL」を時間無制限に楽しめるモードです。</Bullet>
+            <Bullet>ゴールそれは次のスタートへ。思う存分塗りつぶそう！</Bullet>
+          </ul>
+
+          <h3 style={{ ...h2, marginTop: '28px' }}>■ カスタマイズしよう</h3>
+          <p style={p}>メニューから、ゲーム画面をあなた好みにアレンジできます。</p>
+
+          <p style={{ ...p, fontWeight: 900, color: '#333', margin: '12px 0 4px' }}>無料版</p>
+          <ul style={{ paddingLeft: '20px', margin: 0 }}>
+            <Bullet>ブロックの色をランダムモードに切り替えることができます</Bullet>
+            <Bullet>ブロックの背景にお気に入りの画像（1枚）を設定して楽しめます</Bullet>
+          </ul>
+
+          <p style={{ ...p, fontWeight: 900, color: ACCENT_COLOR, margin: '14px 0 4px' }}>
+            ★ PRO版（有償版）300円
+          </p>
+          <ul style={{ paddingLeft: '20px', margin: 0 }}>
+            <Bullet>広告が非表示になります</Bullet>
+            <Bullet>ブロックの色を自由に変更できます</Bullet>
+            <Bullet>ブロックの背景にお気に入りの画像（最大10枚）を設定して楽しめます</Bullet>
+            <Bullet>「FILL」のブロックサイズをランダムモードに変更できます</Bullet>
+            <Bullet>「GOAL」のフラッグ、爆弾、星の絵文字を自由に変更できます</Bullet>
+            <Bullet>「TIME」の制限時間を自由に設定できます</Bullet>
+            <Bullet>「ENDLESS」のブロックサイズを5種類から選択できます</Bullet>
           </ul>
         </div>
       </div>

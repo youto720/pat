@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { loadImages, saveImages } from './imageStore';
 
 export interface Settings {
   bgColor: string;
@@ -7,19 +8,25 @@ export interface Settings {
   randomColors: boolean;
   randomSize: boolean; // FILL / GOAL でマス数をラウンドごとにランダムにする
   bgImages: string[]; // data URL の配列（PRO は複数枚もてる）
+  // GOAL モードのマス絵文字（変更は PRO 限定）
+  iconGoal: string;
+  iconMine: string;
+  iconBonus: string;
 }
+
+export const DEFAULT_ICONS = { iconGoal: '🚩', iconMine: '💣', iconBonus: '★' };
 
 const KEY = 'popo_settings';
 
 // 無料は1枚だけ、PRO は複数枚を登録してラウンドごとにランダム表示
 export const MAX_BG_IMAGES_FREE = 1;
-export const MAX_BG_IMAGES_PRO = 8;
+export const MAX_BG_IMAGES_PRO = 10;
 
 // アプリのメインカラー。ボタンなどの UI アクセントはすべてここを参照する
-export const MAIN_COLOR = '#38a7d0';
-export const MAIN_COLOR_RGB = '56, 167, 208'; // 影などで rgba() を作る用
-// アクセントカラー（ロゴのオレンジ）。クリア時の文字・スコアなどに使う
-export const ACCENT_COLOR = '#d2541e';
+export const MAIN_COLOR = '#00aeec'; // ロゴ「P」の水色
+export const MAIN_COLOR_RGB = '0, 174, 236'; // 影などで rgba() を作る用
+// アクセントカラー（ロゴ「o」のオレンジ）。クリア時の文字・スコアなどに使う
+export const ACCENT_COLOR = '#eb5f2c';
 
 export const DEFAULT_COLORS = {
   bgColor: '#ffffff',
@@ -32,6 +39,7 @@ const DEFAULTS: Settings = {
   randomColors: true,
   randomSize: false,
   bgImages: [],
+  ...DEFAULT_ICONS,
 };
 
 function load(): Settings {
@@ -41,7 +49,18 @@ function load(): Settings {
     const saved = JSON.parse(raw) as Partial<Settings> & { bgImage?: string | null };
     // 旧形式（bgImage 単体）からの移行
     const bgImages = saved.bgImages ?? (saved.bgImage ? [saved.bgImage] : []);
-    return { ...DEFAULTS, ...saved, bgImages };
+    // 旧デフォルト色のまま保存されていたら、新しいロゴの色に置き換える
+    const migrate = (v: string | undefined, olds: string[], now: string) =>
+      v && olds.includes(v.toLowerCase()) ? now : v;
+    const cellColor = migrate(saved.cellColor, ['#66ccff', '#2fb6b3', '#38a7d0'], MAIN_COLOR);
+    const tapColor = migrate(saved.tapColor, ['#cacacc', '#f19117', '#d2541e'], ACCENT_COLOR);
+    return {
+      ...DEFAULTS,
+      ...saved,
+      bgImages,
+      cellColor: cellColor ?? DEFAULTS.cellColor,
+      tapColor: tapColor ?? DEFAULTS.tapColor,
+    };
   } catch {
     return DEFAULTS;
   }
@@ -49,16 +68,55 @@ function load(): Settings {
 
 export function useSettings() {
   const [settings, setSettings] = useState<Settings>(load);
-  // localStorage の容量超過（画像の入れすぎ）で保存できなかったか
+  // 保存できなかった（容量超過など）。画面には反映されるが次回起動時に復元されない
   const [saveError, setSaveError] = useState(false);
 
+  // 画像は IndexedDB に置く。開けない環境では localStorage に入れたまま運用する
+  // （null = 未判定 / false = 使えない / true = 使える）
+  const idbRef = useRef<boolean | null>(null);
+  // 起動直後に IndexedDB から読み込むまでは、画像の保存処理を走らせない
+  const imagesLoadedRef = useRef(false);
+
+  // 起動時：IndexedDB の画像を読み込む。旧来 localStorage にあった画像は移行する
   useEffect(() => {
+    let alive = true;
+    (async () => {
+      const stored = await loadImages();
+      if (!alive) return;
+      if (stored === null) {
+        idbRef.current = false; // フォールバック：localStorage のまま
+        imagesLoadedRef.current = true;
+        return;
+      }
+      idbRef.current = true;
+      setSettings(prev => {
+        if (stored.length > 0) return { ...prev, bgImages: stored };
+        // IndexedDB が空で localStorage に画像が残っていれば、それを引き継ぐ（移行）。
+        // 新しいオブジェクトを返して保存処理を走らせ、localStorage 側の画像を消す
+        if (prev.bgImages.length > 0) void saveImages(prev.bgImages);
+        return { ...prev };
+      });
+      imagesLoadedRef.current = true;
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const useIdb = idbRef.current === true;
+    // 画像以外は localStorage（IndexedDB が使えるときは画像を除いて軽く保つ）
+    const { bgImages, ...rest } = settings;
     try {
-      localStorage.setItem(KEY, JSON.stringify(settings));
+      localStorage.setItem(KEY, JSON.stringify(useIdb ? rest : settings));
       setSaveError(false);
     } catch {
-      // 画面には反映されるが、次回起動時には復元されない
       setSaveError(true);
+    }
+    if (useIdb && imagesLoadedRef.current) {
+      void saveImages(bgImages).then(ok => {
+        if (!ok) setSaveError(true);
+      });
     }
   }, [settings]);
 
