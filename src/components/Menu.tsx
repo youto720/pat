@@ -27,6 +27,19 @@ interface Props {
 // ドロワーの幅。閉じる✕の位置計算にも使う
 const DRAWER_WIDTH = 260;
 
+// アイコン欄に許可する値: 見た目1文字（書記素1つ）で、文字・数字を含まないもの。
+// 絵文字は複数コードポイントで1文字になることが多いので、文字数ではなく書記素で数える
+function graphemeCount(v: string): number {
+  const Seg = (Intl as unknown as { Segmenter?: new (l: string, o: { granularity: string }) => { segment(s: string): Iterable<unknown> } }).Segmenter;
+  if (Seg) return [...new Seg('ja', { granularity: 'grapheme' }).segment(v)].length;
+  return Array.from(v).length; // 古い環境向けのおおまかな代替
+}
+
+export function isIconAllowed(v: string): boolean {
+  if (v === '' || graphemeCount(v) !== 1) return false;
+  return !/[\p{L}\p{N}]/u.test(v);
+}
+
 const MODES: Array<{ id: GameMode; label: string }> = [
   { id: 'fill', label: 'FILL' },
   { id: 'goal', label: 'GOAL' },
@@ -152,8 +165,14 @@ export function Menu({
     </label>
   );
 
-  // 絵文字指定は PRO 限定。入力中は空にできるようにし、空のまま確定したら既定値に戻す
+  // 絵文字指定は PRO 限定。入力中は空にできるようにし、空のまま確定したら既定値に戻す。
+  // 受け付けるのは「見た目1文字」かつ「文字・数字を含まない」もの（絵文字・記号だけ）
   const [iconDraft, setIconDraft] = useState<Partial<Record<'iconGoal' | 'iconMine' | 'iconBonus', string>>>({});
+  const [iconRejected, setIconRejected] = useState(false);
+  const rejectIcon = () => {
+    setIconRejected(true);
+    setTimeout(() => setIconRejected(false), 1500);
+  };
   const iconRow = (label: string, key: 'iconGoal' | 'iconMine' | 'iconBonus') => (
     <label
       style={{
@@ -171,12 +190,20 @@ export function Menu({
         type="text"
         value={iconDraft[key] ?? settings[key]}
         disabled={!isPro}
-        maxLength={4}
+        maxLength={16}
         aria-label={`icon ${label}`}
         onChange={e => {
-          const v = e.target.value;
+          const v = e.target.value.trim();
+          if (v === '') {
+            setIconDraft(d => ({ ...d, [key]: '' }));
+            return;
+          }
+          if (!isIconAllowed(v)) {
+            rejectIcon(); // 受け付けず、直前の値のまま
+            return;
+          }
           setIconDraft(d => ({ ...d, [key]: v }));
-          if (v.trim() !== '') onUpdateSettings({ [key]: v.trim() });
+          onUpdateSettings({ [key]: v });
         }}
         onBlur={() => {
           if ((iconDraft[key] ?? '').trim() === '' && iconDraft[key] !== undefined) {
@@ -396,6 +423,11 @@ export function Menu({
         {iconRow('GOAL', 'iconGoal')}
         {iconRow('MINE', 'iconMine')}
         {iconRow('BONUS', 'iconBonus')}
+        {iconRejected && (
+          <div style={{ fontSize: '10px', fontWeight: 800, color: '#E87070', marginTop: '2px' }}>
+            EMOJI / SYMBOL ONLY (1 CHAR)
+          </div>
+        )}
         {!isPro && (
           <div style={{ fontSize: '10px', fontWeight: 700, color: '#bbb', marginTop: '2px' }}>
             ★ PRO: CUSTOM ICONS
