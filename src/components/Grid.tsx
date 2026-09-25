@@ -19,7 +19,7 @@ interface Props {
   revealImage?: boolean;
   disabled?: boolean;
   /** グリッド右下のマス数ランダム切替（FILL / GOAL のときだけ渡す） */
-  sizeToggle?: { on: boolean; onToggle: () => void };
+  sizeToggle?: { on: boolean; onToggle: () => void; locked?: boolean };
   /** ゴール・地雷・加点マスの絵文字 */
   icons: CellIcons;
 }
@@ -309,6 +309,7 @@ export function Grid({
           onClick={sizeToggle.onToggle}
           aria-label="random size"
           aria-pressed={sizeToggle.on}
+          disabled={sizeToggle.locked}
           style={{
             position: 'absolute',
             right: '12px',
@@ -326,11 +327,12 @@ export function Grid({
             borderColor: sizeToggle.on ? MAIN_COLOR : 'rgba(0,0,0,0.15)',
             borderRadius: '999px',
             backgroundColor: sizeToggle.on ? MAIN_COLOR : 'rgba(255,255,255,0.85)',
-            color: sizeToggle.on ? '#fff' : '#666',
-            cursor: 'pointer',
+            color: sizeToggle.on ? '#fff' : sizeToggle.locked ? '#aaa' : '#666',
+            cursor: sizeToggle.locked ? 'default' : 'pointer',
+            opacity: sizeToggle.locked ? 0.7 : 1,
           }}
         >
-          🎲 SIZE RANDOM {sizeToggle.on ? 'ON' : 'OFF'}
+          🎲 SIZE RANDOM {sizeToggle.locked ? '★PRO' : sizeToggle.on ? 'ON' : 'OFF'}
         </button>
       )}
       <div

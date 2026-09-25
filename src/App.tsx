@@ -157,11 +157,13 @@ export default function App() {
     (game.mode === 'time' && !taRunning) || (game.mode === 'endless' && !endlessStarted);
 
   // マス数ランダム設定をゲームロジックに反映（次ラウンドから効く）
+  // マス数ランダムは PRO 限定。無料は設定に残っていても効かせない
+  const sizeRandomActive = isPro && settings.randomSize;
   useEffect(() => {
-    game.setRandomSize(settings.randomSize);
-  }, [settings.randomSize]);
+    game.setRandomSize(sizeRandomActive);
+  }, [sizeRandomActive]);
 
-  const sizeIsRandom = settings.randomSize && (game.mode === 'fill' || game.mode === 'goal');
+  const sizeIsRandom = sizeRandomActive && game.mode === 'fill';
   const next = computeConfig(game.goalCount);
   const willGrow =
     !sizeIsRandom && (next.cols !== game.config.cols || next.rows !== game.config.rows);
@@ -197,8 +199,12 @@ export default function App() {
         icons={{ goal: settings.iconGoal, mine: settings.iconMine, bonus: settings.iconBonus }}
         disabled={gridDisabled}
         sizeToggle={
-          game.mode === 'fill' || game.mode === 'goal'
-            ? { on: settings.randomSize, onToggle: () => update({ randomSize: !settings.randomSize }) }
+          game.mode === 'fill'
+            ? {
+                on: sizeRandomActive,
+                locked: !isPro,
+                onToggle: () => isPro && update({ randomSize: !settings.randomSize }),
+              }
             : undefined
         }
       />

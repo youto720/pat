@@ -66,9 +66,9 @@ function soundOf(prev: GameState, kind: SoundKind, step?: number) {
   return { id: (prev.soundEvent?.id ?? 0) + 1, kind, step };
 }
 
-// マス数ランダムは FILL / GOAL の通常モードだけに効く（TIME・ENDLESS は対象外）
+// マス数ランダムは FILL の通常モードだけに効く（GOAL・TIME・ENDLESS は対象外）
 function usesRandomSize(mode: GameMode, randomSize: boolean): boolean {
-  return randomSize && (mode === 'fill' || mode === 'goal');
+  return randomSize && mode === 'fill';
 }
 
 function makeInitialState(

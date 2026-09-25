@@ -9,20 +9,19 @@ interface Props {
 const VIDEO_ID: string | null = null;
 
 const h2: React.CSSProperties = {
-  fontSize: '17px',
+  fontSize: '13.5px',
   fontWeight: 900,
   color: '#333',
-  margin: '22px 0 2px',
+  margin: '22px 0 6px',
   display: 'flex',
   alignItems: 'center',
   gap: '8px',
 };
 
 const lead: React.CSSProperties = {
-  fontSize: '13px',
+  fontSize: '13.5px',
   fontWeight: 800,
   color: ACCENT_COLOR,
-  margin: '0 0 6px',
 };
 
 const p: React.CSSProperties = {
@@ -144,8 +143,8 @@ export function HowToPlay({ onClose }: Props) {
 
           <h3 style={h2}>
             <span style={badge('FILL')}>FILL</span>
+            <span style={lead}>すべてを塗りつぶそう！</span>
           </h3>
-          <p style={lead}>すべてを塗りつぶそう！</p>
           <ul style={{ paddingLeft: '20px', margin: 0 }}>
             <Bullet>画面内のすべてのブロックを一筆書きで塗りつぶすモードです。</Bullet>
             <Bullet>
@@ -156,8 +155,8 @@ export function HowToPlay({ onClose }: Props) {
 
           <h3 style={h2}>
             <span style={badge('GOAL')}>GOAL</span>
+            <span style={lead}>スコアを競おう！</span>
           </h3>
-          <p style={lead}>スコアを競おう！</p>
           <ul style={{ paddingLeft: '20px', margin: 0 }}>
             <Bullet>障害物を避けながら、高得点でのゴールを目指すモードです。</Bullet>
             <Bullet>
@@ -171,8 +170,8 @@ export function HowToPlay({ onClose }: Props) {
 
           <h3 style={h2}>
             <span style={badge('TIME')}>TIME</span>
+            <span style={lead}>タイムアタック！</span>
           </h3>
-          <p style={lead}>タイムアタック！</p>
           <ul style={{ paddingLeft: '20px', margin: 0 }}>
             <Bullet>制限時間内での最高スコアを目指すハラハラドキドキのモードです。</Bullet>
             <Bullet>
@@ -182,8 +181,8 @@ export function HowToPlay({ onClose }: Props) {
 
           <h3 style={h2}>
             <span style={badge('ENDLESS')}>ENDLESS</span>
+            <span style={lead}>限界に挑もう！</span>
           </h3>
-          <p style={lead}>限界に挑もう！</p>
           <ul style={{ paddingLeft: '20px', margin: 0 }}>
             <Bullet>「FILL」を時間無制限に楽しめるモードです。</Bullet>
             <Bullet>ゴールそれは次のスタートへ。思う存分塗りつぶそう！</Bullet>
