@@ -22,6 +22,8 @@ interface Props {
   sizeToggle?: { on: boolean; onToggle: () => void; locked?: boolean };
   /** ゴール・地雷・加点マスの絵文字 */
   icons: CellIcons;
+  /** スタート画面を抜けてゲームが始まっているか（開始演出はこれ以降に出す） */
+  active?: boolean;
 }
 
 export interface CellIcons {
@@ -52,6 +54,7 @@ export function Grid({
   disabled = false,
   sizeToggle,
   icons,
+  active = true,
 }: Props) {
   const gridRef = useRef<HTMLDivElement>(null);
   const isMouseDownRef = useRef(false);
@@ -213,14 +216,15 @@ export function Grid({
   const startAnim = START_FLIP_ANIM && game.mode === 'fill';
   const [revealedRound, setRevealedRound] = useState(-1);
   useEffect(() => {
-    if (!startAnim) return;
+    // スタート画面の裏で先にめくれてしまわないよう、ゲーム開始後にだけ動かす
+    if (!startAnim || !active) return;
     const round = game.roundId;
     const t = setTimeout(() => {
       setRevealedRound(round);
-      sound.playStep(0); // めくれるタイミングで通常のタップ音
+      sound.playStep(9); // めくれるタイミングで、なぞり音の10個目の高さ
     }, START_FLIP_DELAY_MS);
     return () => clearTimeout(t);
-  }, [game.roundId, startAnim]);
+  }, [game.roundId, startAnim, active]);
   const startRevealed = !startAnim || revealedRound === game.roundId;
 
   const { cols, rows } = game.config;

@@ -345,14 +345,6 @@ export function Menu({
             RESET
           </button>
         </div>
-        {colorRow('BG', 'bgColor')}
-        {colorRow('CELL', 'cellColor')}
-        {colorRow('TAP', 'tapColor')}
-        {!isPro && (
-          <div style={{ fontSize: '10px', fontWeight: 700, color: '#bbb', marginTop: '2px' }}>
-            ★ PRO: CUSTOM COLORS
-          </div>
-        )}
         {/* ランダムカラー：トグルスイッチ */}
         <div
           style={{
@@ -396,7 +388,14 @@ export function Menu({
             />
           </button>
         </div>
-
+        {colorRow('BG', 'bgColor')}
+        {colorRow('CELL', 'cellColor')}
+        {colorRow('TAP', 'tapColor')}
+        {!isPro && (
+          <div style={{ fontSize: '10px', fontWeight: 700, color: '#bbb', marginTop: '2px' }}>
+            ★ PRO: CUSTOM COLORS
+          </div>
+        )}
         {/* GOAL モードの絵文字（PRO 限定） */}
         <div style={{ ...sectionLabel, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           ICONS
